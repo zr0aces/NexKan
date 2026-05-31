@@ -92,3 +92,98 @@ describe('GET /api/tasks/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('POST /api/tasks', () => {
+  it('creates a task and returns 201', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'New Task', description: 'Do it.' });
+    expect(res.status).toBe(201);
+    expect(res.body.id).toBeTruthy();
+    expect(res.body.title).toBe('New Task');
+    expect(res.body.status).toBe('plan');
+  });
+
+  it('returns 400 when title is missing', async () => {
+    const res = await request(app).post('/api/tasks').send({ description: 'No title' });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('PUT /api/tasks/:id', () => {
+  it('updates a task and returns 200', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'Original' }));
+    const res = await request(app)
+      .put('/api/tasks/abc12345')
+      .send({ title: 'Updated' });
+    expect(res.status).toBe(200);
+    expect(res.body.title).toBe('Updated');
+  });
+
+  it('returns 404 when task not found', async () => {
+    const res = await request(app).put('/api/tasks/notexist').send({ title: 'x' });
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('PATCH /api/tasks/:id/status', () => {
+  it('moves task to new status', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'plan' }));
+    const res = await request(app)
+      .patch('/api/tasks/abc12345/status')
+      .send({ status: 'todo', due_date: '2099-12-31' });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('todo');
+  });
+
+  it('returns 400 when moving to todo without due_date', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'plan', due_date: undefined }));
+    const res = await request(app)
+      .patch('/api/tasks/abc12345/status')
+      .send({ status: 'todo' });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for invalid status', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'Task' }));
+    const res = await request(app)
+      .patch('/api/tasks/abc12345/status')
+      .send({ status: 'invalid' });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 404 when task not found', async () => {
+    const res = await request(app)
+      .patch('/api/tasks/notexist/status')
+      .send({ status: 'done' });
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('PATCH /api/tasks/:id/order', () => {
+  it('reorders task within column and returns 200', async () => {
+    writeTask(makeTask({ id: 'aaa11111', title: 'A', status: 'todo', sort_order: 1 }));
+    writeTask(makeTask({ id: 'bbb22222', title: 'B', status: 'todo', sort_order: 2 }));
+    writeTask(makeTask({ id: 'abc12345', title: 'C', status: 'todo', sort_order: 3 }));
+    const res = await request(app)
+      .patch('/api/tasks/abc12345/order')
+      .send({ position: 0 });
+    expect(res.status).toBe(200);
+    expect(res.body.sort_order).toBe(1);
+  });
+});
+
+describe('DELETE /api/tasks/:id', () => {
+  it('deletes a task and returns 204', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'To Delete' }));
+    const res = await request(app).delete('/api/tasks/abc12345');
+    expect(res.status).toBe(204);
+    const check = await request(app).get('/api/tasks/abc12345');
+    expect(check.status).toBe(404);
+  });
+
+  it('returns 404 when task not found', async () => {
+    const res = await request(app).delete('/api/tasks/notexist');
+    expect(res.status).toBe(404);
+  });
+});
