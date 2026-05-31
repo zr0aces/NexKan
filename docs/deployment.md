@@ -25,23 +25,26 @@ cd /opt/nexkan
 ### 2. Configure environment
 
 ```bash
-cp backend/.env.example .env
+cp .env.example .env
 ```
 
 Edit `.env`:
 
 ```bash
-# Required
+# Host port nginx binds to
+HOST_PORT=8092
+
+# Timezone (e.g. Europe/Berlin, Asia/Bangkok)
+TZ=UTC
+
+# Telegram bot (required for bot/notifications; leave blank to disable)
 TELEGRAM_BOT_TOKEN=1234567890:ABCdef...
 TELEGRAM_CHAT_ID=987654321
 TELEGRAM_WEBHOOK_URL=https://yourdomain.com/api/webhooks/telegram
 
-# Generate these two with: openssl rand -hex 32
+# Generate with: openssl rand -hex 32
 TELEGRAM_WEBHOOK_SECRET=<64-char-hex>
 CRON_SECRET=<64-char-hex>
-
-# Set to your local timezone
-TZ=Europe/Berlin
 ```
 
 ### 3. Initialize data directories
