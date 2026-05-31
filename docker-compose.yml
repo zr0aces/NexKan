@@ -12,7 +12,7 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
+      - "8092:80"
     volumes:
       - ./frontend/dist:/usr/share/nginx/html:ro
       - ./nginx/nexkan.conf:/etc/nginx/conf.d/default.conf:ro
