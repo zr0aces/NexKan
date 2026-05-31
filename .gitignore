@@ -1,0 +1,6 @@
+node_modules/
+dist/
+backend/data/tasks/
+backend/data/notifications-sent.json
+.env
+*.env.local
