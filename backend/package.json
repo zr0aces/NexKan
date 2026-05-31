@@ -9,8 +9,10 @@
     "test": "jest"
   },
   "dependencies": {
+    "chrono-node": "^2.9.1",
     "date-fns": "^3.6.0",
     "express": "^4.19.2",
+    "grammy": "^1.43.0",
     "gray-matter": "^4.0.3",
     "nanoid": "3.3.7",
     "zod": "^3.23.8"
