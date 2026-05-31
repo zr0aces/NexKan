@@ -9,7 +9,6 @@ interface TaskDetailProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  plan: 'Plan',
   todo: 'Todo',
   'in-progress': 'In Progress',
   done: 'Done',

@@ -13,7 +13,7 @@ export default function BoardPage() {
   const [filters, setFilters] = useState<TaskFilters>({ sort: 'sort_order:asc' });
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('plan');
+  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('todo');
 
   const { data: tasks = [], isLoading, error, refetch } = useTasks(filters);
 
@@ -49,7 +49,7 @@ export default function BoardPage() {
               <RefreshCw className="h-4 w-4" />
             </Button>
             <ThemeToggle />
-            <Button size="sm" onClick={() => handleAddClick('plan')}>
+            <Button size="sm" onClick={() => handleAddClick('todo')}>
               <Plus className="h-4 w-4 mr-1" />
               New Task
             </Button>

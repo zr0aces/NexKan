@@ -1,10 +1,9 @@
-import { BookOpen, Circle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Circle, Loader2, CheckCircle2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Task, TaskStatus } from '@/types/task';
 import { cn } from '@/lib/utils';
 
 const COLUMNS: Array<{ status: TaskStatus; label: string; Icon: LucideIcon }> = [
-  { status: 'plan',        label: 'Plan',        Icon: BookOpen     },
   { status: 'todo',        label: 'Todo',        Icon: Circle       },
   { status: 'in-progress', label: 'In Progress', Icon: Loader2      },
   { status: 'done',        label: 'Done',        Icon: CheckCircle2 },

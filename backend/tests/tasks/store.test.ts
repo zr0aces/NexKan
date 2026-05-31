@@ -123,7 +123,7 @@ describe('create', () => {
     const task = await create({ title: 'New Task', description: 'Do it.' });
     expect(task.id).toHaveLength(8);
     expect(task.title).toBe('New Task');
-    expect(task.status).toBe('plan');
+    expect(task.status).toBe('todo');
     expect(task.sort_order).toBe(1);
     expect(task.created_at).toBeTruthy();
     expect(task.updated_at).toBeTruthy();
@@ -134,8 +134,8 @@ describe('create', () => {
   });
 
   it('assigns sort_order = max + 1 in column', async () => {
-    writeTask(makeTask({ id: 'aaa11111', title: 'Existing', status: 'plan', sort_order: 5 }));
-    const task = await create({ title: 'New Task', status: 'plan', description: 'x' });
+    writeTask(makeTask({ id: 'aaa11111', title: 'Existing', status: 'todo', sort_order: 5 }));
+    const task = await create({ title: 'New Task', status: 'todo', description: 'x' });
     expect(task.sort_order).toBe(6);
   });
 
@@ -176,12 +176,12 @@ describe('updateStatus', () => {
   });
 
   it('throws if moving to todo without due_date', async () => {
-    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'plan', due_date: undefined }));
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'done', due_date: undefined }));
     await expect(updateStatus('abc12345', 'todo')).rejects.toThrow('due_date');
   });
 
   it('accepts due_date when moving to todo', async () => {
-    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'plan', due_date: undefined }));
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'done', due_date: undefined }));
     const updated = await updateStatus('abc12345', 'todo', '2026-12-31');
     expect(updated.status).toBe('todo');
     expect(updated.due_date).toBe('2026-12-31');

@@ -1,14 +1,14 @@
 import { readById, updateStatus } from '../../tasks/store';
 import { TaskStatus } from '../../types/task';
 
-const VALID_STATUSES: TaskStatus[] = ['plan', 'todo', 'in-progress', 'done'];
+const VALID_STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done'];
 
 export async function handleMove(ctx: any): Promise<void> {
   try {
     const args: string = ctx.match?.trim() ?? '';
     const parts = args.split(/\s+/);
     if (parts.length < 2 || !parts[0] || !parts[1]) {
-      await ctx.reply('Usage: /move <id> <status>\nStatuses: plan, todo, in-progress, done');
+      await ctx.reply('Usage: /move <id> <status>\nStatuses: todo, in-progress, done');
       return;
     }
 
@@ -17,6 +17,7 @@ export async function handleMove(ctx: any): Promise<void> {
 
     if (!VALID_STATUSES.includes(status)) {
       await ctx.reply(`Invalid status. Use: ${VALID_STATUSES.join(', ')}`);
+
       return;
     }
 

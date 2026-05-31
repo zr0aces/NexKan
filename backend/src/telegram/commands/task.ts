@@ -28,8 +28,7 @@ export async function handleTask(ctx: any): Promise<void> {
       .text('▶ Start', `move:${task.id}:in-progress`)
       .text('✅ Complete', `move:${task.id}:done`)
       .row()
-      .text('📌 Todo', `move:${task.id}:todo`)
-      .text('📋 Plan', `move:${task.id}:plan`);
+      .text('📌 Todo', `move:${task.id}:todo`);
 
     await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown', reply_markup: keyboard });
   } catch {

@@ -99,7 +99,7 @@ describe('handleTasks', () => {
   it('shows grouped tasks', async () => {
     (readAll as jest.Mock).mockResolvedValue([
       makeTask({ id: 'aaa11111', title: 'Todo Task', status: 'todo' }),
-      makeTask({ id: 'bbb22222', title: 'Plan Task', status: 'plan', due_date: undefined }),
+      makeTask({ id: 'bbb22222', title: 'In Progress Task', status: 'in-progress' }),
     ]);
     const ctx = makeCtx('/tasks');
     await handleTasks(ctx);
@@ -168,7 +168,7 @@ describe('handleMove', () => {
   });
 
   it('asks for due_date when moving to todo without one', async () => {
-    (readById as jest.Mock).mockResolvedValue(makeTask({ id: 'abc12345', due_date: undefined, status: 'plan' }));
+    (readById as jest.Mock).mockResolvedValue(makeTask({ id: 'abc12345', due_date: undefined, status: 'done' }));
     const ctx = makeCtx('/move abc12345 todo');
     ctx.match = 'abc12345 todo';
     await handleMove(ctx);

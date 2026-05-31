@@ -7,14 +7,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const COLUMN_STYLES: Record<TaskStatus, string> = {
-  plan: 'border-t-gray-400',
   todo: 'border-t-blue-400',
   'in-progress': 'border-t-orange-400',
   done: 'border-t-green-400',
 };
 
 const COLUMN_LABELS: Record<TaskStatus, string> = {
-  plan: 'Plan',
   todo: 'Todo',
   'in-progress': 'In Progress',
   done: 'Done',

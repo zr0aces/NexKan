@@ -7,7 +7,7 @@ export async function handleHelp(ctx: any): Promise<void> {
       `/today — Tasks due today\n` +
       `/overdue — Overdue tasks\n` +
       `/task <id> — Task detail + actions\n` +
-      `/move <id> <status> — Move task (plan|todo|in-progress|done)`
+      `/move <id> <status> — Move task (todo|in-progress|done)`
     );
   } catch {
     await ctx.reply('Something went wrong. Try again.');

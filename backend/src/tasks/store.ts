@@ -146,7 +146,7 @@ export async function create(input: CreateTaskInput): Promise<Task> {
   fs.mkdirSync(dir, { recursive: true });
 
   const id = nanoid(8);
-  const status = input.status ?? 'plan';
+  const status = input.status ?? 'todo';
   const now = new Date().toISOString();
 
   const allTasks = await readAllFiles();

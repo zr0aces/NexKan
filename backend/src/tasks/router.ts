@@ -10,7 +10,7 @@ const CreateTaskSchema = z.object({
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   tags: z.array(z.string()).optional(),
-  status: z.enum(['plan', 'todo', 'in-progress', 'done']).optional(),
+  status: z.enum(['todo', 'in-progress', 'done']).optional(),
 });
 
 const UpdateTaskSchema = z.object({
@@ -23,7 +23,7 @@ const UpdateTaskSchema = z.object({
 });
 
 const StatusSchema = z.object({
-  status: z.enum(['plan', 'todo', 'in-progress', 'done']),
+  status: z.enum(['todo', 'in-progress', 'done']),
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 

@@ -15,7 +15,7 @@ import { KanbanColumn } from './KanbanColumn';
 import { MobileColumnNav } from './MobileColumnNav';
 import { useUpdateTaskStatus, useUpdateTaskOrder } from '@/hooks/useTaskMutation';
 
-const STATUSES: TaskStatus[] = ['plan', 'todo', 'in-progress', 'done'];
+const STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done'];
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -27,6 +27,7 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [dragError, setDragError] = useState<string | null>(null);
   const [activeColumn, setActiveColumn] = useState<TaskStatus>('todo');
+
   const [isDragging, setIsDragging] = useState(false);
 
   const updateStatus = useUpdateTaskStatus();

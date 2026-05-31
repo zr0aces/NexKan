@@ -101,7 +101,7 @@ describe('POST /api/tasks', () => {
     expect(res.status).toBe(201);
     expect(res.body.id).toBeTruthy();
     expect(res.body.title).toBe('New Task');
-    expect(res.body.status).toBe('plan');
+    expect(res.body.status).toBe('todo');
   });
 
   it('returns 400 when title is missing', async () => {
@@ -128,7 +128,7 @@ describe('PUT /api/tasks/:id', () => {
 
 describe('PATCH /api/tasks/:id/status', () => {
   it('moves task to new status', async () => {
-    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'plan' }));
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'done' }));
     const res = await request(app)
       .patch('/api/tasks/abc12345/status')
       .send({ status: 'todo', due_date: '2099-12-31' });
@@ -137,7 +137,7 @@ describe('PATCH /api/tasks/:id/status', () => {
   });
 
   it('returns 400 when moving to todo without due_date', async () => {
-    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'plan', due_date: undefined }));
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'done', due_date: undefined }));
     const res = await request(app)
       .patch('/api/tasks/abc12345/status')
       .send({ status: 'todo' });

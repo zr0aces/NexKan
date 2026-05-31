@@ -21,7 +21,7 @@ interface TaskDialogProps {
 
 type Mode = 'view' | 'edit' | 'create';
 
-export function TaskDialog({ task, defaultStatus = 'plan', open, onOpenChange }: TaskDialogProps) {
+export function TaskDialog({ task, defaultStatus = 'todo', open, onOpenChange }: TaskDialogProps) {
   const [mode, setMode] = useState<Mode>(task ? 'view' : 'create');
   const [title, setTitle] = useState(task?.title ?? '');
   const [description, setDescription] = useState(task?.description ?? '');
@@ -139,7 +139,6 @@ export function TaskDialog({ task, defaultStatus = 'plan', open, onOpenChange }:
                   value={status}
                   onChange={e => setStatus(e.target.value as TaskStatus)}
                 >
-                  <option value="plan">Plan</option>
                   <option value="todo">Todo</option>
                   <option value="in-progress">In Progress</option>
                   <option value="done">Done</option>

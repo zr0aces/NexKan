@@ -21,7 +21,7 @@ export async function handleAdd(ctx: any): Promise<void> {
       if (beforeDate) title = beforeDate;
     }
 
-    const task = await create({ title, due_date, status: 'plan', description: '' });
+    const task = await create({ title, due_date, status: 'todo', description: '' });
     await ctx.reply(`✅ Task created: ${task.title} (${task.id})${due_date ? `\nDue: ${due_date}` : ''}`);
   } catch {
     await ctx.reply('Something went wrong. Try again.');

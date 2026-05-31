@@ -9,24 +9,20 @@ function formatTask(t: Task): string {
 
 export async function handleTasks(ctx: any): Promise<void> {
   try {
-    const tasks = await readAll({ status: 'plan,todo,in-progress' });
+    const tasks = await readAll({ status: 'todo,in-progress' });
     if (tasks.length === 0) {
       await ctx.reply('No tasks found.');
       return;
     }
 
-    const grouped: Record<string, Task[]> = { plan: [], todo: [], 'in-progress': [] };
+    const grouped: Record<string, Task[]> = { todo: [], 'in-progress': [] };
     for (const t of tasks) {
       if (grouped[t.status]) grouped[t.status].push(t);
     }
 
     const lines: string[] = [];
-    if (grouped.plan.length > 0) {
-      lines.push('📋 Plan:');
-      grouped.plan.forEach(t => lines.push(formatTask(t)));
-    }
     if (grouped.todo.length > 0) {
-      lines.push('\n📌 Todo:');
+      lines.push('📌 Todo:');
       grouped.todo.forEach(t => lines.push(formatTask(t)));
     }
     if (grouped['in-progress'].length > 0) {

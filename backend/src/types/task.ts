@@ -1,4 +1,4 @@
-export type TaskStatus = 'plan' | 'todo' | 'in-progress' | 'done';
+export type TaskStatus = 'todo' | 'in-progress' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
 
 export interface Task {
@@ -24,7 +24,7 @@ export interface CreateTaskInput {
   due_date?: string;
   priority?: TaskPriority;
   tags?: string[];
-  status?: TaskStatus;          // defaults to 'plan'
+  status?: TaskStatus;          // defaults to 'todo'
 }
 
 export interface UpdateTaskInput {
