@@ -1,4 +1,4 @@
-# MarkNext — Personal Kanban Board: Design Spec
+# NexKan — Personal Kanban Board: Design Spec
 
 **Date:** 2026-05-31
 **Status:** Approved
@@ -647,14 +647,14 @@ location /api/notifications/check {
 
 # All other API — requires auth
 location /api/ {
-    auth_basic "MarkNext";
+    auth_basic "NexKan";
     auth_basic_user_file /etc/nginx/.htpasswd;
     proxy_pass http://backend:3000;
 }
 
 # Frontend static files
 location / {
-    auth_basic "MarkNext";
+    auth_basic "NexKan";
     auth_basic_user_file /etc/nginx/.htpasswd;
     root /usr/share/nginx/html;
     try_files $uri $uri/ /index.html;
@@ -667,14 +667,14 @@ Runs once daily (morning). Cron environment does not expand `.env` variables —
 
 ```bash
 # Setup (run once):
-echo "$CRON_SECRET" > /etc/marknext/cron-secret
-chmod 600 /etc/marknext/cron-secret
+echo "$CRON_SECRET" > /etc/nexkan/cron-secret
+chmod 600 /etc/nexkan/cron-secret
 ```
 
 ```cron
-# /etc/cron.d/marknext
+# /etc/cron.d/nexkan
 0 8 * * * root curl -s -X POST https://yourdomain.com/api/notifications/check \
-  -H "X-Cron-Secret: $(cat /etc/marknext/cron-secret)"
+  -H "X-Cron-Secret: $(cat /etc/nexkan/cron-secret)"
 ```
 
 Backend `telegram/middleware.ts` `cronAuth` validates `X-Cron-Secret` header.
