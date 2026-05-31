@@ -1,13 +1,13 @@
 # MarkNext — Personal Kanban Board: Design Spec
 
-**Date:** 2026-05-31  
+**Date:** 2026-05-31
 **Status:** Approved
 
 ---
 
 ## Overview
 
-Lightweight, self-hosted personal Kanban board. Markdown files as primary storage. Web UI for task management. Telegram bot for notifications and remote task control. Designed for low-resource servers (Raspberry Pi).
+Lightweight, self-hosted personal Kanban board. Markdown files as primary storage. Web UI for task management. Telegram bot for notifications and remote task control. AI personal assistant layer (provider-agnostic, feature-flagged). Designed for low-resource servers (Raspberry Pi).
 
 ---
 
@@ -20,8 +20,10 @@ Lightweight, self-hosted personal Kanban board. Markdown files as primary storag
 | Real-time sync | None — manual refresh only |
 | Repo structure | Two root dirs: `frontend/` + `backend/` |
 | Backend data layer | Stateless read-on-demand (no in-memory cache) |
-| Notification trigger | OS cron → `POST /api/notifications/check` |
+| Notification trigger | OS cron daily → `POST /api/notifications/check` |
 | Telegram code | Modular inside `backend/src/telegram/` — same container, clean boundaries |
+| Due date | Date only (`YYYY-MM-DD`), no time component |
+| AI integration | Provider-agnostic interface, stub by default, feature-flagged via `AI_ENABLED` |
 
 ---
 
@@ -41,12 +43,15 @@ title: Buy groceries
 status: todo
 priority: high
 tags: [shopping, personal]
-due_date: 2024-01-20
-created_at: 2024-01-15T10:30:00Z
-updated_at: 2024-01-16T08:00:00Z
+due_date: 2026-06-01
+sort_order: 3
+created_at: 2026-05-15T10:30:00Z
+updated_at: 2026-05-16T08:00:00Z
 telegram_message_id: 98765
 attachments:
   - receipts/jan2024.pdf
+ai_summary: Quick errand, low cognitive load.
+ai_tags: [errand, personal]
 ---
 
 ## Description
@@ -67,16 +72,42 @@ Check discount aisle for olive oil.
 | In Progress | `in-progress` |
 | Done | `done` |
 
-### Required vs Optional Fields
+### Field Reference
 
-**Required:** `id`, `title`, `status`, `created_at`, `updated_at`  
-**Required when status is `todo` or `in-progress`:** `due_date`  
+**Required:** `id`, `title`, `status`, `created_at`, `updated_at`
+**Required when status is `todo` or `in-progress`:** `due_date`
+**Required:** `sort_order` (integer, controls card order within column)
 **Optional:** `priority`, `tags`, `notes`, `attachments`, `telegram_message_id`
+**Optional (AI):** `ai_summary`, `ai_tags`
+
+### `due_date` Semantics
+
+- Format: `YYYY-MM-DD` (date only, no time).
+- Overdue: `due_date < today` (date comparison in server timezone).
+- Due today: `due_date === today`.
+- Due tomorrow: `due_date === today + 1 day`.
+- Server timezone set via `TZ` env var (default: `UTC`).
+
+### `sort_order` Semantics
+
+- Integer. Lower = higher in column.
+- Assigned on create: `max(sort_order in column) + 1`.
+- Updated on drag-drop reorder via `PATCH /api/tasks/:id/order`.
+- Reset to `max + 1` when task moves column (goes to bottom of target column).
 
 ### Deduplication State
 
-`backend/data/notifications-sent.json` — tracks sent notifications, keyed by `taskId:trigger`.  
-Cleared per task when status moves to `done`.
+`backend/data/notifications-sent.json` — tracks sent notifications.
+Key format: `{taskId}:{trigger}:{reference-date}` where `reference-date` is the `due_date` value.
+
+Examples:
+- `a3f9k2mw:due-tomorrow:2026-06-01`
+- `a3f9k2mw:due-today:2026-06-01`
+- `a3f9k2mw:overdue:2026-06-03` (date notification was sent, not due date)
+
+Cleared per task when status moves to `done`. Keys include `due_date` so rescheduling a task correctly re-triggers notifications.
+
+**Pre-creation required:** `./data/notifications-sent.json` must exist before container starts. Init script: `echo '{}' > ./data/notifications-sent.json`.
 
 ---
 
@@ -90,8 +121,8 @@ Feature-based module structure. Each module owns its routes, services, and middl
 backend/
   src/
     tasks/
-      router.ts           ← task CRUD routes
-      store.ts            ← all file I/O (readAll, readById, create, update, delete)
+      router.ts           ← task CRUD + reorder routes
+      store.ts            ← all file I/O (readAll, readById, create, update, delete, reorder)
       parser.ts           ← Task ↔ markdown serialization via gray-matter
     telegram/
       router.ts           ← webhook + notifications/check + status + test routes
@@ -104,16 +135,27 @@ backend/
         move.ts
         task.ts
         help.ts
+        ai.ts             ← /ai command stub (AI_ENABLED gate)
+        brief.ts          ← /brief command stub (AI_ENABLED gate)
       callbacks.ts        ← inline button handler (move:, view:)
       notifier.ts         ← due date check + Telegram sends
       middleware.ts       ← webhook-auth + cron-auth
+    ai/
+      interface.ts        ← AIProvider interface
+      context.ts          ← builds task context objects for AI consumption
+      router.ts           ← /api/ai/* route stubs
+      providers/
+        stub.ts           ← default no-op provider (always returns empty/null)
+        anthropic.ts      ← Claude integration (future — not wired in v1)
     types/
       task.ts             ← shared Task interface
-    app.ts                ← mounts tasks/ and telegram/ routers
+    app.ts                ← mounts tasks/, telegram/, ai/ routers
     server.ts
   data/
     tasks/                ← markdown files (Docker volume)
     notifications-sent.json
+  scripts/
+    init-data.sh          ← creates ./data dirs and pre-creates notifications-sent.json
   .env.example
   Dockerfile
   package.json
@@ -135,46 +177,151 @@ backend/
 ### API Endpoints
 
 ```
-GET    /api/tasks                  ?status=&tags=&priority=&search=&sort=
+# Tasks
+GET    /api/tasks                  ?status=&tags=&priority=&sort=&search=
 GET    /api/tasks/:id
 POST   /api/tasks
 PUT    /api/tasks/:id
-PATCH  /api/tasks/:id/status
+PATCH  /api/tasks/:id/status       ← validates due_date requirement on status change
+PATCH  /api/tasks/:id/order        ← updates sort_order within column
 DELETE /api/tasks/:id
 
-POST   /api/webhooks/telegram      ← Telegram delivers updates here
-POST   /api/notifications/check    ← OS cron hits this
+# Telegram
+POST   /api/webhooks/telegram      ← Telegram delivers updates here (no nginx auth)
+POST   /api/notifications/check    ← OS cron hits this (no nginx auth, X-Cron-Secret)
 GET    /api/telegram/status
 POST   /api/telegram/test
+
+# AI (stubs — return 501 when AI_ENABLED=false)
+POST   /api/ai/suggest             ← suggest tags/priority/due_date for a task
+POST   /api/ai/chat                ← natural language task management
+POST   /api/ai/daily-brief         ← generate daily task summary
+GET    /api/ai/status              ← AI provider connection status
 ```
+
+### `?sort=` Options
+
+| Value | Description |
+|-------|-------------|
+| `due_date:asc` (default) | Earliest due date first |
+| `due_date:desc` | Latest due date first |
+| `priority:desc` | High priority first |
+| `created_at:desc` | Newest first |
+| `sort_order:asc` | Manual drag-drop order (default within board view) |
+
+### `?search=` Scope
+
+Search is limited to frontmatter fields: `title`, `tags`. Body content is not searched in v1 (would require reading every file — unacceptable on Raspberry Pi SD card at scale). Document this limitation in API docs.
 
 ### tasks/store.ts Responsibilities
 
 Pure file I/O service. No caching.
 
-- `readAll(filters?)` — scan `data/tasks/`, parse each `.md`, apply filters
-- `readById(id)` — find file by ID prefix in filename, parse
-- `create(data)` — generate nanoid, build filename, write file
+- `readAll(filters?)` — scan `data/tasks/`, parse each `.md`, apply filters, sort by `sort_order`
+- `readById(id)` — scan directory for `{id}-*.md`, parse (O(n) — acceptable at personal scale)
+- `create(data)` — generate nanoid, assign `sort_order = max + 1`, write file
 - `update(id, data)` — find file, update frontmatter + body, write
-- `updateStatus(id, status)` — partial update, only changes `status` + `updated_at`
-- `delete(id)` — find file by ID, unlink
+- `updateStatus(id, status)` — validates `due_date` present if status ∈ `{todo, in-progress}`, updates `status` + `updated_at` + resets `sort_order` to bottom of target column
+- `updateOrder(id, newOrder)` — shifts other tasks' `sort_order` in same column to make room
+- `delete(id)` — find file by ID prefix, unlink
 
 ### Notification Logic (telegram/notifier.ts)
 
-Called on every `POST /api/notifications/check`:
+Called on every `POST /api/notifications/check`. Compares dates only (no time).
 
-1. Read all tasks where `status !== done` via `tasks/store.ts`
-2. For each task with `due_date`:
-   - If within now+24h ±30min → send alert (key `{taskId}:due-24h`)
-   - If within now+1h ±10min → send alert (key `{taskId}:due-1h`)
-   - If `due_date` < now → send overdue alert (key `{taskId}:overdue:{YYYY-MM-DD}`)
-3. Update `data/notifications-sent.json`
+1. Read all tasks where `status !== done`
+2. Get `today = new Date()` in server timezone (`TZ` env)
+3. For each task with `due_date`:
+   - `due_date === tomorrow` → send "Due tomorrow" alert (key `{taskId}:due-tomorrow:{due_date}`)
+   - `due_date === today` → send "Due today" alert (key `{taskId}:due-today:{due_date}`)
+   - `due_date < today` → send "Overdue" alert (key `{taskId}:overdue:{today-date}`)
+4. Update `data/notifications-sent.json`
 
-Dedup key examples: `a3f9k2mw:due-24h`, `a3f9k2mw:overdue:2026-05-31`.
+Keys include `due_date` so rescheduling always re-triggers correctly. Overdue key uses `today-date` (not `due_date`) so it re-notifies each day the task remains overdue.
+
+### Telegram Webhook Error Handling
+
+All command handlers must catch errors and reply with a user-facing message, then return 200 OK. Uncaught errors cause Telegram to retry the webhook indefinitely.
+
+```
+try {
+  // handle command
+} catch (err) {
+  await ctx.reply('Something went wrong. Try again.');
+  // log error
+}
+// always return 200
+```
 
 ### Module Boundaries
 
-`telegram/` imports from `tasks/store.ts` directly (same process). No HTTP between modules. `tasks/` has zero knowledge of `telegram/`.
+- `telegram/` imports from `tasks/store.ts` directly (same process). No HTTP between modules.
+- `ai/` imports from `tasks/store.ts` via `ai/context.ts` only.
+- `tasks/` has zero knowledge of `telegram/` or `ai/`.
+
+---
+
+## 2b. AI Integration (Future-Ready)
+
+AI is feature-flagged. When `AI_ENABLED=false` (default), all `/api/ai/*` endpoints return `501 Not Implemented` and Telegram AI commands reply "AI not enabled." System works fully without AI configured.
+
+### AIProvider Interface (ai/interface.ts)
+
+```typescript
+interface AIProvider {
+  suggestMetadata(task: Task): Promise<AISuggestion>;
+  chat(message: string, context: TaskContext): Promise<string>;
+  dailyBrief(tasks: Task[]): Promise<string>;
+  isAvailable(): boolean;
+}
+
+interface AISuggestion {
+  tags?: string[];
+  priority?: 'low' | 'medium' | 'high';
+  due_date?: string;        // YYYY-MM-DD
+  summary?: string;
+}
+```
+
+### Task Context (ai/context.ts)
+
+Builds a structured view of tasks for AI consumption:
+
+```typescript
+interface TaskContext {
+  task?: Task;              // current task (for per-task operations)
+  recentTasks: Task[];      // last 20 active tasks (for context)
+  overdueCount: number;
+  dueTodayCount: number;
+}
+```
+
+### Providers
+
+| Provider | File | Status |
+|----------|------|--------|
+| Stub | `providers/stub.ts` | Default — always returns null/empty |
+| Anthropic Claude | `providers/anthropic.ts` | Future — wire when `AI_PROVIDER=anthropic` |
+
+Provider resolved at startup via `AI_PROVIDER` env var. Fallback to stub if provider fails to initialize.
+
+### Telegram AI Commands (stubs in v1)
+
+| Command | Action |
+|---------|--------|
+| `/ai <prompt>` | Natural language task management (future) |
+| `/brief` | AI-generated daily summary of tasks (future) |
+
+Both return "AI not enabled. Set AI_ENABLED=true in .env." when `AI_ENABLED=false`.
+
+### Optional Task Fields for AI
+
+Stored in frontmatter, written by AI on suggestion acceptance:
+
+- `ai_summary` — short AI-generated description of the task
+- `ai_tags` — AI-suggested tags (user can accept → merged into `tags`)
+
+These are never required and ignored when AI is disabled.
 
 ---
 
@@ -217,10 +364,11 @@ frontend/
   index.html
   vite.config.ts
   tailwind.config.ts
-  Dockerfile
   package.json
   tsconfig.json
 ```
+
+Note: No runtime frontend container. Vite builds to `frontend/dist/` during deploy; nginx serves static files directly.
 
 ### Libraries
 
@@ -246,15 +394,20 @@ frontend/
 api.ts (fetch) → TanStack Query cache → page components → board/task components
 ```
 
-No global state manager. TanStack Query handles all server state. `useTasks()` fetches with filters; `useTaskMutation()` wraps create/update/delete and invalidates cache on success.
+No global state manager. TanStack Query handles all server state. `useTasks()` fetches with filters; `useTaskMutation()` wraps create/update/delete/reorder and invalidates cache on success.
 
 ### Drag-and-Drop
 
-`DndContext` wraps `KanbanBoard`. Dropping a card on a different column triggers `PATCH /api/tasks/:id/status`. Optimistic update: move card immediately, revert on API error.
+`DndContext` wraps `KanbanBoard`. Two drag events:
+
+- **Cross-column drop:** triggers `PATCH /api/tasks/:id/status`
+- **Same-column reorder:** triggers `PATCH /api/tasks/:id/order`
+
+Optimistic update: move card immediately, revert on API error. Cards within each column sorted by `sort_order` ascending.
 
 ### Overdue Highlighting
 
-`TaskCard` computes overdue client-side: `due_date < Date.now() && status !== done` → red border + "Overdue" badge.
+`TaskCard` computes overdue client-side: `due_date < today (date only) && status !== done` → red border + "Overdue" badge. Date comparison uses `date-fns/isAfter` against start of today.
 
 ### Responsive
 
@@ -268,13 +421,15 @@ Tailwind breakpoints. Mobile: single-column scroll. Tablet: 2-column. Desktop: 4
 
 | Command | Action |
 |---------|--------|
-| `/add <title> [date]` | Create task in `plan` column. `date` accepts ISO (`2026-06-01`) or natural language (`tomorrow`, `next monday`) via `chrono-node` |
+| `/add <title> [date]` | Create task in `plan` column. `date` accepts ISO (`2026-06-01`) or natural language (`tomorrow`, `next monday`) via `chrono-node`. Parsed to `YYYY-MM-DD`. |
 | `/tasks` | List all non-done tasks grouped by status |
-| `/today` | Tasks with `due_date` = today |
-| `/overdue` | Tasks where `due_date` < today, status ≠ done |
+| `/today` | Tasks where `due_date === today` |
+| `/overdue` | Tasks where `due_date < today`, status ≠ done |
 | `/task <id>` | Task detail + inline action buttons |
-| `/move <id> <status>` | Move task (`plan\|todo\|in-progress\|done`) |
+| `/move <id> <status>` | Move task (`plan\|todo\|in-progress\|done`). If target status requires `due_date` and task has none, bot replies asking for date. Status input normalized to lowercase. |
 | `/help` | Command reference |
+| `/ai <prompt>` | Natural language task management (stub — requires `AI_ENABLED=true`) |
+| `/brief` | AI daily summary (stub — requires `AI_ENABLED=true`) |
 
 ### Inline Keyboard Buttons
 
@@ -285,27 +440,33 @@ Tailwind breakpoints. Mobile: single-column scroll. Tablet: 2-column. Desktop: 4
 [ Move → Todo ] [ Move → Done ]
 ```
 
-`callback_data` format: `move:{taskId}:{newStatus}`  
-grammy callback handler parses and calls `task-store.updateStatus()` directly.
+`callback_data` format: `move:{taskId}:{newStatus}`
+grammy callback handler parses and calls `tasks/store.updateStatus()` directly.
 
 ### Notification Message Format
 
 ```
 ⚠️ Overdue: Buy groceries (a3f9k2mw)
-Due: 2 days ago · Status: todo
+Due: yesterday · Status: todo
 [ View Task ]
 
-🔔 Due in 1 hour: Deploy backend (b2x9m1qp)
-Due: 14:00 today · Status: in-progress
+🔔 Due today: Deploy backend (b2x9m1qp)
+Status: in-progress
+[ View Task ]
+
+📅 Due tomorrow: Write report (c7z2p4nq)
+Status: todo
 [ View Task ]
 ```
 
-`[ View Task ]` is a callback button with `callback_data: "view:{taskId}"`. Bot handler responds with the full task detail message + action buttons (same as `/task <id>` output).
+`[ View Task ]` is a callback button with `callback_data: "view:{taskId}"`. Bot handler responds with full task detail + action buttons.
 
 ### Webhook Security
 
-Telegram sends `X-Telegram-Bot-Api-Secret-Token` header with every request.  
-`webhook-auth.ts` validates against `TELEGRAM_WEBHOOK_SECRET` env var. Returns 401 on mismatch.
+Telegram sends `X-Telegram-Bot-Api-Secret-Token` header with every request.
+`telegram/middleware.ts` `webhookAuth` validates against `TELEGRAM_WEBHOOK_SECRET` env var. Returns 401 on mismatch.
+
+All handlers wrap in try/catch — always return 200 OK to Telegram (prevents retry storms).
 
 Webhook registered at backend startup via grammy's `setWebhook`.
 
@@ -317,7 +478,7 @@ Webhook registered at backend startup via grammy's `setWebhook`.
 
 ```
 nginx       ← HTTPS termination, auth, reverse proxy (port 80/443)
-backend     ← Express API: tasks + telegram webhook + notifications (port 3000, internal)
+backend     ← Express API: tasks + telegram + ai modules (port 3000, internal)
 ```
 
 Frontend is static — Vite builds to `frontend/dist/`, nginx serves directly (no runtime container).
@@ -376,26 +537,47 @@ location / {
 
 ### OS Cron (Notification Trigger)
 
-```cron
-# /etc/cron.d/marknext
-0 * * * * root curl -s -X POST https://yourdomain.com/api/notifications/check \
-  -H "X-Cron-Secret: ${CRON_SECRET}"
+Runs once daily (morning). Cron environment does not expand `.env` variables — secret must be written to a dedicated file.
+
+```bash
+# Setup (run once):
+echo "$CRON_SECRET" > /etc/marknext/cron-secret
+chmod 600 /etc/marknext/cron-secret
 ```
 
-Backend `telegram/middleware.ts` validates `X-Cron-Secret` header.
+```cron
+# /etc/cron.d/marknext
+0 8 * * * root curl -s -X POST https://yourdomain.com/api/notifications/check \
+  -H "X-Cron-Secret: $(cat /etc/marknext/cron-secret)"
+```
+
+Backend `telegram/middleware.ts` `cronAuth` validates `X-Cron-Secret` header.
 
 ### Environment Variables
 
 ```bash
 # .env.example
+
+# Server
+PORT=3000
+NODE_ENV=production
+TZ=UTC                                   # server timezone for date comparisons
+
+# Data
+DATA_DIR=/app/data/tasks
+NOTIFICATIONS_FILE=/app/data/notifications-sent.json
+
+# Telegram
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 TELEGRAM_WEBHOOK_SECRET=
 TELEGRAM_WEBHOOK_URL=https://yourdomain.com/api/webhooks/telegram
 CRON_SECRET=
-DATA_DIR=/app/data/tasks
-PORT=3000
-NODE_ENV=production
+
+# AI (optional)
+AI_ENABLED=false
+AI_PROVIDER=stub                         # stub | anthropic (future)
+ANTHROPIC_API_KEY=                       # required when AI_PROVIDER=anthropic
 ```
 
 ### Data Persistence
@@ -403,7 +585,14 @@ NODE_ENV=production
 ```
 ./data/                          ← git-ignored, bind-mounted into backend container
   tasks/                         ← markdown task files
-  notifications-sent.json        ← notification dedup state
+  notifications-sent.json        ← notification dedup state (must pre-exist as file)
+```
+
+Init script (`scripts/init-data.sh`):
+```bash
+#!/bin/bash
+mkdir -p ./data/tasks
+[ -f ./data/notifications-sent.json ] || echo '{}' > ./data/notifications-sent.json
 ```
 
 Backup strategy: `git init ./data` + commit, or rsync/Syncthing on `./data/`.
@@ -413,21 +602,24 @@ Backup strategy: `git init ./data` + commit, or rsync/Syncthing on `./data/`.
 ## 6. Security
 
 - HTTPS only (nginx terminates TLS)
-- Telegram webhook validated via secret token header
-- Notification cron endpoint validated via `X-Cron-Secret` header
+- Telegram webhook validated via `X-Telegram-Bot-Api-Secret-Token` header
+- Notification cron endpoint validated via `X-Cron-Secret` header (secret stored in file, not env — safe from cron expansion issues)
 - Auth handled by nginx (basic auth, OAuth2 proxy, or OIDC — no internal user system)
 - All secrets via environment variables — no hardcoded credentials
 - `.env` git-ignored
+- AI API keys isolated in env — never logged, never sent to client
 
 ---
 
 ## Deliverables
 
 - `frontend/` — React + TypeScript + Vite + ShadCN + dnd-kit
-- `backend/` — Node.js + Express + TypeScript (tasks + telegram modules)
+- `backend/` — Node.js + Express + TypeScript (tasks + telegram + ai modules)
 - `backend/src/tasks/store.ts` — markdown file I/O engine
-- `backend/src/telegram/` — grammy bot, commands, notifier (modular, same container)
-- `docker-compose.yml` + `Dockerfile` (backend only; frontend static)
+- `backend/src/telegram/` — grammy bot, commands, notifier (modular)
+- `backend/src/ai/` — provider interface + stub + context builder (future-ready)
+- `backend/scripts/init-data.sh` — data directory initializer
+- `docker-compose.yml` + `backend/Dockerfile`
 - `nginx/` — nginx config with auth + webhook routing
 - `.env.example`
 - `docs/` — deployment guide + API reference
