@@ -19,13 +19,16 @@ interface MobileColumnNavProps {
 export function MobileColumnNav({ activeStatus, onStatusChange, tasks }: MobileColumnNavProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden">
-      <div className="flex">
+      <div role="tablist" className="flex">
         {COLUMNS.map(({ status, label, Icon }) => {
           const count = tasks.filter(t => t.status === status).length;
           const isActive = status === activeStatus;
           return (
             <button
               key={status}
+              role="tab"
+              aria-selected={isActive}
+              aria-current={isActive ? 'page' : undefined}
               onClick={() => onStatusChange(status)}
               className={cn(
                 'flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors',

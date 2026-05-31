@@ -22,9 +22,14 @@ async function readAllFiles(): Promise<Task[]> {
   const dir = getDataDir();
   if (!fs.existsSync(dir)) return [];
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'));
-  return files.map(filename => {
-    const content = fs.readFileSync(path.join(dir, filename), 'utf-8');
-    return parseTask(content, filename);
+  return files.flatMap(filename => {
+    try {
+      const content = fs.readFileSync(path.join(dir, filename), 'utf-8');
+      return [parseTask(content, filename)];
+    } catch {
+      console.error(`Skipping corrupted task file: ${filename}`);
+      return [];
+    }
   });
 }
 
@@ -246,13 +251,11 @@ export async function updateOrder(id: string, position: number): Promise<Task> {
 
   try {
     for (let i = 0; i < others.length; i++) {
-      const t = others[i];
-      const fp = snapshots[i].path;
-      const fileContent = fs.readFileSync(fp, 'utf-8');
-      const parsed = parseTask(fileContent, path.basename(fp));
+      const snap = snapshots[i];
+      const parsed = parseTask(snap.content, path.basename(snap.path));
       parsed.sort_order = i + 1;
       parsed.updated_at = new Date().toISOString();
-      fs.writeFileSync(fp, serializeTask(parsed));
+      fs.writeFileSync(snap.path, serializeTask(parsed));
     }
   } catch (err) {
     // Restore originals

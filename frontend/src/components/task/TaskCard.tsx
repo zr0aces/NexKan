@@ -38,7 +38,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       style={style}
       className={cn(
         'bg-card border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow',
-        overdue && 'border-red-400 bg-red-50',
+        overdue && 'border-destructive bg-destructive/10',
         isDragging && 'shadow-lg'
       )}
       onClick={onClick}
@@ -61,7 +61,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {task.priority && <PriorityBadge priority={task.priority} />}
             {task.due_date && (
-              <span className={cn('flex items-center gap-1 text-xs text-muted-foreground', overdue && 'text-red-600')}>
+              <span className={cn('flex items-center gap-1 text-xs text-muted-foreground', overdue && 'text-destructive')}>
                 <Calendar className="h-3 w-3" />
                 {format(parseISO(task.due_date), 'MMM d')}
               </span>

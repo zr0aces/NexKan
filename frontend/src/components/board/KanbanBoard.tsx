@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -27,18 +27,19 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [dragError, setDragError] = useState<string | null>(null);
   const [activeColumn, setActiveColumn] = useState<TaskStatus>('todo');
+  const [isDragging, setIsDragging] = useState(false);
 
   const updateStatus = useUpdateTaskStatus();
   const updateOrder = useUpdateTaskOrder();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-  // Sync with server state
-  const tasksKey = tasks.map(t => `${t.id}:${t.sort_order}:${t.status}`).join(',');
-  const localKey = localTasks.map(t => `${t.id}:${t.sort_order}:${t.status}`).join(',');
-  if (tasksKey !== localKey) {
-    setLocalTasks(tasks);
-  }
+  // Sync server state into localTasks, but never during an active drag
+  useEffect(() => {
+    if (!isDragging) {
+      setLocalTasks(tasks);
+    }
+  }, [tasks, isDragging]);
 
   const getColumnTasks = useCallback(
     (status: TaskStatus) =>
@@ -46,7 +47,9 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
     [localTasks]
   );
 
-  function handleDragStart(_event: DragStartEvent) {}
+  function handleDragStart(_event: DragStartEvent) {
+    setIsDragging(true);
+  }
 
   function handleDragOver({ active, over }: DragOverEvent) {
     if (!over) return;
@@ -62,6 +65,8 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
   }
 
   async function handleDragEnd({ active, over }: DragEndEvent) {
+    setIsDragging(false);
+
     if (!over) {
       setLocalTasks(tasks);
       return;
@@ -75,7 +80,11 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
 
     if (overStatus && activeTask.status !== overStatus) {
       const originalTask = tasks.find(t => t.id === active.id);
-      if (originalTask && originalTask.status !== overStatus) {
+      if (!originalTask) {
+        setLocalTasks(tasks);
+        return;
+      }
+      if (originalTask.status !== overStatus) {
         try {
           await updateStatus.mutateAsync({ id: activeTask.id, status: overStatus });
         } catch (err) {

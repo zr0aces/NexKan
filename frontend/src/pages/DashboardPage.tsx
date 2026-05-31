@@ -52,7 +52,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatsCard title="Overdue" value={overdueTasks.length} icon={AlertTriangle} className={overdueTasks.length > 0 ? 'border-red-200' : ''} />
+              <StatsCard title="Overdue" value={overdueTasks.length} icon={AlertTriangle} className={overdueTasks.length > 0 ? 'border-destructive' : ''} />
               <StatsCard title="Due Today" value={todayTasks.length} icon={Clock} />
               <StatsCard title="Active" value={activeTasks.length} icon={List} />
               <StatsCard title="Done" value={doneTasks.length} icon={CheckSquare} />

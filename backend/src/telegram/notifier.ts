@@ -40,50 +40,52 @@ export async function checkAndNotify(): Promise<void> {
   const tomorrow = addDays(today, 1);
   const bot = getBot();
 
-  for (const task of tasks) {
-    if (task.status === 'done' || !task.due_date) continue;
+  try {
+    for (const task of tasks) {
+      if (task.status === 'done' || !task.due_date) continue;
 
-    const dueDate = startOfDay(parseISO(task.due_date));
-    const keyboard = new InlineKeyboard().text('View Task', `view:${task.id}`);
+      const dueDate = startOfDay(parseISO(task.due_date));
+      const keyboard = new InlineKeyboard().text('View Task', `view:${task.id}`);
 
-    if (isBefore(dueDate, today)) {
-      const key = `${task.id}:overdue:${todayStr()}`;
-      if (!sent[key]) {
-        await bot.api.sendMessage(
-          chatId,
-          `⚠️ Overdue: ${task.title} (${task.id})\nDue: ${task.due_date} · Status: ${task.status}`,
-          { reply_markup: keyboard }
-        );
-        sent[key] = true;
+      if (isBefore(dueDate, today)) {
+        const key = `${task.id}:overdue:${todayStr()}`;
+        if (!sent[key]) {
+          await bot.api.sendMessage(
+            chatId,
+            `⚠️ Overdue: ${task.title} (${task.id})\nDue: ${task.due_date} · Status: ${task.status}`,
+            { reply_markup: keyboard }
+          );
+          sent[key] = true;
+        }
+        continue;
       }
-      continue;
-    }
 
-    if (isEqual(dueDate, today)) {
-      const key = `${task.id}:due-today:${task.due_date}`;
-      if (!sent[key]) {
-        await bot.api.sendMessage(
-          chatId,
-          `🔔 Due today: ${task.title} (${task.id})\nStatus: ${task.status}`,
-          { reply_markup: keyboard }
-        );
-        sent[key] = true;
+      if (isEqual(dueDate, today)) {
+        const key = `${task.id}:due-today:${task.due_date}`;
+        if (!sent[key]) {
+          await bot.api.sendMessage(
+            chatId,
+            `🔔 Due today: ${task.title} (${task.id})\nStatus: ${task.status}`,
+            { reply_markup: keyboard }
+          );
+          sent[key] = true;
+        }
+        continue;
       }
-      continue;
-    }
 
-    if (isEqual(dueDate, tomorrow)) {
-      const key = `${task.id}:due-tomorrow:${task.due_date}`;
-      if (!sent[key]) {
-        await bot.api.sendMessage(
-          chatId,
-          `📅 Due tomorrow: ${task.title} (${task.id})\nStatus: ${task.status}`,
-          { reply_markup: keyboard }
-        );
-        sent[key] = true;
+      if (isEqual(dueDate, tomorrow)) {
+        const key = `${task.id}:due-tomorrow:${task.due_date}`;
+        if (!sent[key]) {
+          await bot.api.sendMessage(
+            chatId,
+            `📅 Due tomorrow: ${task.title} (${task.id})\nStatus: ${task.status}`,
+            { reply_markup: keyboard }
+          );
+          sent[key] = true;
+        }
       }
     }
+  } finally {
+    saveSent(sent);
   }
-
-  saveSent(sent);
 }
