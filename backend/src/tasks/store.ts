@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { nanoid } from 'nanoid';
 import { parseTask, serializeTask } from './parser';
 import { Task, TaskFilters, CreateTaskInput, UpdateTaskInput } from '../types/task';
 import { startOfDay, parseISO, isBefore, isEqual, addDays, format } from 'date-fns';
@@ -118,4 +119,138 @@ export async function readById(id: string): Promise<Task | null> {
   if (files.length === 0) return null;
   const content = fs.readFileSync(path.join(dir, files[0]), 'utf-8');
   return parseTask(content, files[0]);
+}
+
+export class NotFoundError extends Error {
+  constructor(id: string) {
+    super(`Task ${id} not found`);
+    this.name = 'NotFoundError';
+  }
+}
+
+async function findFilePath(id: string): Promise<string> {
+  const dir = getDataDir();
+  if (!fs.existsSync(dir)) throw new NotFoundError(id);
+  const files = fs.readdirSync(dir).filter(f => f.startsWith(`${id}-`) && f.endsWith('.md'));
+  if (files.length === 0) throw new NotFoundError(id);
+  return path.join(dir, files[0]);
+}
+
+export async function create(input: CreateTaskInput): Promise<Task> {
+  const dir = getDataDir();
+  fs.mkdirSync(dir, { recursive: true });
+
+  const id = nanoid(8);
+  const status = input.status ?? 'plan';
+  const now = new Date().toISOString();
+
+  const allTasks = await readAllFiles();
+  const inColumn = allTasks.filter(t => t.status === status);
+  const sortOrder = inColumn.length > 0 ? Math.max(...inColumn.map(t => t.sort_order)) + 1 : 1;
+
+  const task: Task = {
+    id,
+    title: input.title,
+    status,
+    tags: input.tags ?? [],
+    sort_order: sortOrder,
+    created_at: now,
+    updated_at: now,
+    attachments: [],
+    description: input.description ?? '',
+    priority: input.priority,
+    due_date: input.due_date,
+    notes: input.notes,
+  };
+
+  const slug = toSlug(input.title);
+  const filename = `${id}-${slug}.md`;
+  fs.writeFileSync(path.join(dir, filename), serializeTask(task));
+  return task;
+}
+
+export async function update(id: string, input: UpdateTaskInput): Promise<Task> {
+  const filePath = await findFilePath(id);
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const task = parseTask(content, path.basename(filePath));
+
+  const updated: Task = {
+    ...task,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.title !== undefined) updated.title = input.title;
+  if (input.description !== undefined) updated.description = input.description;
+  if (input.notes !== undefined) updated.notes = input.notes;
+  if (input.priority !== undefined) updated.priority = input.priority;
+  if (input.tags !== undefined) updated.tags = input.tags;
+  if (input.sort_order !== undefined) updated.sort_order = input.sort_order;
+  if (input.telegram_message_id !== undefined) updated.telegram_message_id = input.telegram_message_id;
+  if (input.due_date === null) {
+    updated.due_date = undefined;
+  } else if (input.due_date !== undefined) {
+    updated.due_date = input.due_date;
+  }
+
+  fs.writeFileSync(filePath, serializeTask(updated));
+  return updated;
+}
+
+export async function updateStatus(id: string, status: string, due_date?: string): Promise<Task> {
+  const filePath = await findFilePath(id);
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const task = parseTask(content, path.basename(filePath));
+
+  const requiresDueDate = status === 'todo' || status === 'in-progress';
+  const effectiveDueDate = due_date ?? task.due_date;
+  if (requiresDueDate && !effectiveDueDate) {
+    throw new Error(`due_date is required when moving to ${status}`);
+  }
+
+  const allTasks = await readAllFiles();
+  const inTargetColumn = allTasks.filter(t => t.status === status && t.id !== id);
+  const sortOrder = inTargetColumn.length > 0
+    ? Math.max(...inTargetColumn.map(t => t.sort_order)) + 1
+    : 1;
+
+  const updated: Task = {
+    ...task,
+    status: status as Task['status'],
+    sort_order: sortOrder,
+    updated_at: new Date().toISOString(),
+    due_date: due_date ?? task.due_date,
+  };
+
+  fs.writeFileSync(filePath, serializeTask(updated));
+  return updated;
+}
+
+export async function updateOrder(id: string, position: number): Promise<Task> {
+  const task = await readById(id);
+  if (!task) throw new NotFoundError(id);
+
+  const allTasks = await readAllFiles();
+  const inColumn = allTasks
+    .filter(t => t.status === task.status)
+    .sort((a, b) => a.sort_order - b.sort_order);
+
+  const others = inColumn.filter(t => t.id !== id);
+  others.splice(position, 0, task);
+
+  for (let i = 0; i < others.length; i++) {
+    const t = others[i];
+    const fp = await findFilePath(t.id);
+    const fileContent = fs.readFileSync(fp, 'utf-8');
+    const parsed = parseTask(fileContent, path.basename(fp));
+    parsed.sort_order = i + 1;
+    parsed.updated_at = new Date().toISOString();
+    fs.writeFileSync(fp, serializeTask(parsed));
+  }
+
+  return (await readById(id))!;
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  const filePath = await findFilePath(id);
+  fs.unlinkSync(filePath);
 }

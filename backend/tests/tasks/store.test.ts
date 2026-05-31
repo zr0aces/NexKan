@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { readAll, readById } from '../../src/tasks/store';
+import { readAll, readById, create, update, updateStatus, updateOrder, deleteTask } from '../../src/tasks/store';
 import { serializeTask } from '../../src/tasks/parser';
 import { Task } from '../../src/types/task';
 
@@ -115,5 +115,102 @@ describe('readById', () => {
   it('returns null when task not found', async () => {
     const task = await readById('notexist');
     expect(task).toBeNull();
+  });
+});
+
+describe('create', () => {
+  it('creates a file with generated ID and correct frontmatter', async () => {
+    const task = await create({ title: 'New Task', description: 'Do it.' });
+    expect(task.id).toHaveLength(8);
+    expect(task.title).toBe('New Task');
+    expect(task.status).toBe('plan');
+    expect(task.sort_order).toBe(1);
+    expect(task.created_at).toBeTruthy();
+    expect(task.updated_at).toBeTruthy();
+
+    // Verify file exists on disk
+    const files = fs.readdirSync(tmpDir);
+    expect(files.some(f => f.startsWith(task.id))).toBe(true);
+  });
+
+  it('assigns sort_order = max + 1 in column', async () => {
+    writeTask(makeTask({ id: 'aaa11111', title: 'Existing', status: 'plan', sort_order: 5 }));
+    const task = await create({ title: 'New Task', status: 'plan', description: 'x' });
+    expect(task.sort_order).toBe(6);
+  });
+
+  it('accepts explicit status', async () => {
+    const task = await create({ title: 'My Task', status: 'todo', due_date: '2026-12-31', description: 'x' });
+    expect(task.status).toBe('todo');
+  });
+});
+
+describe('update', () => {
+  it('updates specified fields without touching others', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'Original', tags: ['a'], sort_order: 2 }));
+    const updated = await update('abc12345', { title: 'Updated' });
+    expect(updated.title).toBe('Updated');
+    expect(updated.tags).toEqual(['a']);
+    expect(updated.sort_order).toBe(2);
+  });
+
+  it('updates updated_at timestamp', async () => {
+    const before = new Date().toISOString();
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', updated_at: '2020-01-01T00:00:00Z' }));
+    const updated = await update('abc12345', { title: 'New' });
+    expect(updated.updated_at >= before).toBe(true);
+  });
+
+  it('throws when task does not exist', async () => {
+    await expect(update('notexist', { title: 'x' })).rejects.toThrow('not found');
+  });
+});
+
+describe('updateStatus', () => {
+  it('changes status and resets sort_order to bottom of target column', async () => {
+    writeTask(makeTask({ id: 'aaa11111', title: 'A', status: 'in-progress', sort_order: 3 }));
+    writeTask(makeTask({ id: 'bbb22222', title: 'B', status: 'done', sort_order: 2 }));
+    const updated = await updateStatus('aaa11111', 'done');
+    expect(updated.status).toBe('done');
+    expect(updated.sort_order).toBe(3); // max(done.sort_order=2) + 1 = 3
+  });
+
+  it('throws if moving to todo without due_date', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'plan', due_date: undefined }));
+    await expect(updateStatus('abc12345', 'todo')).rejects.toThrow('due_date');
+  });
+
+  it('accepts due_date when moving to todo', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'plan', due_date: undefined }));
+    const updated = await updateStatus('abc12345', 'todo', '2026-12-31');
+    expect(updated.status).toBe('todo');
+    expect(updated.due_date).toBe('2026-12-31');
+  });
+});
+
+describe('updateOrder', () => {
+  it('renumbers sort_order for all tasks in column', async () => {
+    writeTask(makeTask({ id: 'aaa11111', title: 'A', status: 'todo', sort_order: 1 }));
+    writeTask(makeTask({ id: 'bbb22222', title: 'B', status: 'todo', sort_order: 2 }));
+    writeTask(makeTask({ id: 'ccc33333', title: 'C', status: 'todo', sort_order: 3 }));
+    // Move C to position 0 (first)
+    await updateOrder('ccc33333', 0);
+    const tasks = await readAll({ status: 'todo' });
+    expect(tasks[0].id).toBe('ccc33333');
+    expect(tasks[1].id).toBe('aaa11111');
+    expect(tasks[2].id).toBe('bbb22222');
+  });
+});
+
+describe('deleteTask', () => {
+  it('removes the task file', async () => {
+    writeTask(makeTask({ id: 'abc12345', title: 'To Delete' }));
+    await deleteTask('abc12345');
+    const task = await readById('abc12345');
+    expect(task).toBeNull();
+  });
+
+  it('throws when task does not exist', async () => {
+    await expect(deleteTask('notexist')).rejects.toThrow('not found');
   });
 });
