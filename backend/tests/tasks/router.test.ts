@@ -54,7 +54,7 @@ describe('GET /api/tasks', () => {
   it('returns tasks sorted by sort_order', async () => {
     writeTask(makeTask({ id: 'aaa11111', title: 'Task A', sort_order: 2 }));
     writeTask(makeTask({ id: 'bbb22222', title: 'Task B', sort_order: 1 }));
-    const res = await request(app).get('/api/tasks');
+    const res = await request(app).get('/api/tasks?sort=sort_order:asc');
     expect(res.status).toBe(200);
     expect(res.body[0].id).toBe('bbb22222');
     expect(res.body[1].id).toBe('aaa11111');

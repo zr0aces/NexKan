@@ -98,11 +98,11 @@ function applySorting(tasks: Task[], sort?: string): Task[] {
     }
     case 'created_at:desc':
       return sorted.sort((a, b) => b.created_at.localeCompare(a.created_at));
-    case 'due_date:asc':
-      return sorted.sort((a, b) => (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999'));
     case 'sort_order:asc':
-    default:
       return sorted.sort((a, b) => a.sort_order - b.sort_order);
+    case 'due_date:asc':
+    default:
+      return sorted.sort((a, b) => (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999'));
   }
 }
 

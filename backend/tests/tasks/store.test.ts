@@ -46,7 +46,7 @@ describe('readAll', () => {
   it('returns all tasks sorted by sort_order ascending', async () => {
     writeTask(makeTask({ id: 'aaa11111', title: 'Task A', sort_order: 2 }));
     writeTask(makeTask({ id: 'bbb22222', title: 'Task B', sort_order: 1 }));
-    const tasks = await readAll();
+    const tasks = await readAll({ sort: 'sort_order:asc' });
     expect(tasks).toHaveLength(2);
     expect(tasks[0].id).toBe('bbb22222');
     expect(tasks[1].id).toBe('aaa11111');
@@ -195,7 +195,7 @@ describe('updateOrder', () => {
     writeTask(makeTask({ id: 'ccc33333', title: 'C', status: 'todo', sort_order: 3 }));
     // Move C to position 0 (first)
     await updateOrder('ccc33333', 0);
-    const tasks = await readAll({ status: 'todo' });
+    const tasks = await readAll({ status: 'todo', sort: 'sort_order:asc' });
     expect(tasks[0].id).toBe('ccc33333');
     expect(tasks[1].id).toBe('aaa11111');
     expect(tasks[2].id).toBe('bbb22222');
