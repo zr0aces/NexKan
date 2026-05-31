@@ -5,6 +5,7 @@ import { useTasks } from '@/hooks/useTasks';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { TaskDialog } from '@/components/task/TaskDialog';
 import { FilterBar } from '@/components/shared/FilterBar';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Task, TaskFilters, TaskStatus } from '@/types/task';
 
@@ -47,6 +48,7 @@ export default function BoardPage() {
             <Button variant="ghost" size="icon" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4" />
             </Button>
+            <ThemeToggle />
             <Button size="sm" onClick={() => handleAddClick('plan')}>
               <Plus className="h-4 w-4 mr-1" />
               New Task
@@ -55,7 +57,7 @@ export default function BoardPage() {
         </div>
       </header>
 
-      <main className="max-w-screen-2xl mx-auto px-4 py-4 space-y-4">
+      <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 md:pb-4 space-y-4">
         <FilterBar filters={filters} onFiltersChange={setFilters} />
 
         {isLoading && (

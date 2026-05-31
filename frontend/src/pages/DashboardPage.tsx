@@ -3,6 +3,7 @@ import { useTasks } from '@/hooks/useTasks';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DeadlineList } from '@/components/dashboard/DeadlineList';
 import { OverdueList } from '@/components/dashboard/OverdueList';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { AlertTriangle, Clock, CheckSquare, List } from 'lucide-react';
 import { startOfDay, parseISO, isBefore, isEqual, addDays, format } from 'date-fns';
 
@@ -33,12 +34,15 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center gap-4">
-          <h1 className="text-xl font-bold">NexKan</h1>
-          <nav className="flex gap-2">
-            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Board</Link>
-            <Link to="/dashboard" className="text-sm font-medium text-foreground">Dashboard</Link>
-          </nav>
+        <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold">NexKan</h1>
+            <nav className="flex gap-2">
+              <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Board</Link>
+              <Link to="/dashboard" className="text-sm font-medium text-foreground">Dashboard</Link>
+            </nav>
+          </div>
+          <ThemeToggle />
         </div>
       </header>
 
