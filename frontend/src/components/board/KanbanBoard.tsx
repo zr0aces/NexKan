@@ -10,7 +10,9 @@ import {
   closestCorners,
 } from '@dnd-kit/core';
 import { Task, TaskStatus } from '@/types/task';
+import { cn } from '@/lib/utils';
 import { KanbanColumn } from './KanbanColumn';
+import { MobileColumnNav } from './MobileColumnNav';
 import { useUpdateTaskStatus, useUpdateTaskOrder } from '@/hooks/useTaskMutation';
 
 const STATUSES: TaskStatus[] = ['plan', 'todo', 'in-progress', 'done'];
@@ -24,6 +26,7 @@ interface KanbanBoardProps {
 export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps) {
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [dragError, setDragError] = useState<string | null>(null);
+  const [activeColumn, setActiveColumn] = useState<TaskStatus>('todo');
 
   const updateStatus = useUpdateTaskStatus();
   const updateOrder = useUpdateTaskOrder();
@@ -43,9 +46,7 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
     [localTasks]
   );
 
-  function handleDragStart(_event: DragStartEvent) {
-    // No state needed for active item — we use optimistic updates in handleDragOver
-  }
+  function handleDragStart(_event: DragStartEvent) {}
 
   function handleDragOver({ active, over }: DragOverEvent) {
     if (!over) return;
@@ -73,17 +74,16 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
     const overTask = localTasks.find(t => t.id === over.id);
 
     if (overStatus && activeTask.status !== overStatus) {
-      // Cross-column drop (but we already moved it optimistically in handleDragOver)
-      // Find the original task to check its status
       const originalTask = tasks.find(t => t.id === active.id);
       if (originalTask && originalTask.status !== overStatus) {
         try {
           await updateStatus.mutateAsync({ id: activeTask.id, status: overStatus });
         } catch (err) {
           setLocalTasks(tasks);
-          const msg = err instanceof Error && err.message.includes('due_date')
-            ? 'Set a due date before moving to this column.'
-            : 'Failed to move task.';
+          const msg =
+            err instanceof Error && err.message.includes('due_date')
+              ? 'Set a due date before moving to this column.'
+              : 'Failed to move task.';
           setDragError(msg);
           setTimeout(() => setDragError(null), 3000);
         }
@@ -118,15 +118,27 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {STATUSES.map(status => (
-          <KanbanColumn
+          <div
             key={status}
-            status={status}
-            tasks={getColumnTasks(status)}
-            onTaskClick={onTaskClick}
-            onAddClick={onAddClick}
-          />
+            className={cn(
+              status === activeColumn ? 'block' : 'hidden',
+              'md:block'
+            )}
+          >
+            <KanbanColumn
+              status={status}
+              tasks={getColumnTasks(status)}
+              onTaskClick={onTaskClick}
+              onAddClick={onAddClick}
+            />
+          </div>
         ))}
       </div>
+      <MobileColumnNav
+        activeStatus={activeColumn}
+        onStatusChange={setActiveColumn}
+        tasks={localTasks}
+      />
     </DndContext>
   );
 }
