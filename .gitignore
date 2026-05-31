@@ -4,3 +4,6 @@ backend/data/tasks/
 backend/data/notifications-sent.json
 .env
 *.env.local
+data/
+nginx/.htpasswd
+frontend/dist/

@@ -1,0 +1,21 @@
+services:
+  backend:
+    build: ./backend
+    expose:
+      - "3000"
+    volumes:
+      - ./data/tasks:/app/data/tasks
+      - ./data/notifications-sent.json:/app/data/notifications-sent.json
+    env_file: .env
+    restart: unless-stopped
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
