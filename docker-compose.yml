@@ -10,12 +10,13 @@ services:
     restart: unless-stopped
 
   nginx:
-    build: ./nginx
+    image: nginx:alpine
     ports:
       - "8092:80"
     volumes:
+      - ./nginx/nexkan.conf:/etc/nginx/conf.d/default.conf:ro
       - ./frontend/dist:/usr/share/nginx/html:ro
-    env_file: .env
+      - ./data/.htpasswd:/etc/nginx/.htpasswd:ro
     depends_on:
       - backend
     restart: unless-stopped

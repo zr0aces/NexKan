@@ -7,6 +7,7 @@ Production deployment on a self-hosted server (Raspberry Pi or any Linux VPS).
 ## Prerequisites
 
 - Linux server with Docker + Docker Compose installed
+- `apache2-utils` installed on the host for user management (`apt install apache2-utils`)
 - A domain pointed at your server (for HTTPS and Telegram webhook)
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
 
@@ -30,10 +31,6 @@ cp backend/.env.example .env
 Edit `.env`:
 
 ```bash
-# Auth
-AUTH_USER=admin
-AUTH_PASSWORD=<strong-password>   # nginx basic auth credentials
-
 # Required
 TELEGRAM_BOT_TOKEN=1234567890:ABCdef...
 TELEGRAM_CHAT_ID=987654321
@@ -54,26 +51,64 @@ mkdir -p data/tasks
 echo '{}' > data/notifications-sent.json
 ```
 
-### 4. Build the frontend
+### 4. Create the first user
+
+nginx uses HTTP Basic Auth backed by `data/.htpasswd`. Create it before starting the stack:
+
+```bash
+./scripts/add-user.sh admin
+# Prompts for a password. Uses bcrypt hashing.
+```
+
+### 5. Build the frontend
 
 ```bash
 cd frontend && npm install && npm run build && cd ..
 ```
 
-### 5. Start the stack
+### 6. Start the stack
 
 ```bash
-docker compose up --build -d
+docker compose up -d
 ```
 
-nginx reads `AUTH_USER` and `AUTH_PASSWORD` from `.env` and generates `/etc/nginx/.htpasswd` inside the container at startup. No manual htpasswd step needed.
+nginx uses the official `nginx:alpine` image — no custom build needed. The config and `.htpasswd` are bind-mounted from the host.
 
 Verify:
 
 ```bash
 docker compose ps          # both containers should be Up
 docker compose logs backend --tail=20
-curl -u admin:<AUTH_PASSWORD> http://localhost/api/tasks   # should return []
+curl -u admin:<password> http://localhost:8092/api/tasks   # should return []
+```
+
+---
+
+## Managing users
+
+All user management operates on `data/.htpasswd` on the host. Changes take effect immediately after reloading nginx — no container restart needed.
+
+### Add or update a user
+
+```bash
+./scripts/add-user.sh <username>
+# Prompts for password, then prints the reload command.
+docker compose exec nginx nginx -s reload
+```
+
+Re-running with the same username updates the password.
+
+### Remove a user
+
+```bash
+./scripts/remove-user.sh <username>
+docker compose exec nginx nginx -s reload
+```
+
+### List users
+
+```bash
+cut -d: -f1 data/.htpasswd
 ```
 
 ---
@@ -86,7 +121,7 @@ Install Caddy on the host, then create `/etc/caddy/Caddyfile`:
 
 ```
 yourdomain.com {
-    reverse_proxy localhost:80
+    reverse_proxy localhost:8092
 }
 ```
 
@@ -137,19 +172,21 @@ git pull
 # Rebuild frontend if frontend/ changed
 cd frontend && npm install && npm run build && cd ..
 
-# Restart services
-docker compose up --build -d
+# Restart (nginx pulls official image, no rebuild needed)
+docker compose up -d
 
 # Verify
 docker compose ps
-curl -u admin:yourpassword http://localhost/api/tasks
+curl -u admin:<password> http://localhost:8092/api/tasks
 ```
+
+User credentials in `data/.htpasswd` persist across updates — no re-creation needed.
 
 ---
 
 ## Backup
 
-The `data/` directory is the source of truth. Everything else is reproducible from code.
+The `data/` directory is the source of truth. Back up both task files and credentials.
 
 ```bash
 # Daily rsync backup
@@ -162,7 +199,11 @@ git add .
 git commit -m "backup $(date +%Y-%m-%d)"
 ```
 
-To restore: copy `data/tasks/*.md` back in place. The app reads from disk on every request — no restart needed.
+To restore: copy `data/tasks/*.md` and `data/.htpasswd` back in place. No restart needed for tasks (read on demand); reload nginx after restoring `.htpasswd`:
+
+```bash
+docker compose exec nginx nginx -s reload
+```
 
 ---
 
@@ -176,12 +217,21 @@ docker compose logs -f
 docker compose logs backend -f --tail=50
 
 # Check backend is responding
-curl -u admin:yourpassword http://localhost/api/telegram/status
+curl -u admin:<password> http://localhost:8092/api/telegram/status
 ```
 
 ---
 
 ## Troubleshooting
+
+**nginx fails to start — `.htpasswd` not found**
+
+The `.htpasswd` file must exist before `docker compose up`. Create at least one user first:
+
+```bash
+./scripts/add-user.sh admin
+docker compose up -d
+```
 
 **Telegram webhook not receiving updates**
 
@@ -199,7 +249,7 @@ curl -X POST https://api.telegram.org/bot<TOKEN>/setWebhook \
 
 ```bash
 # Test the endpoint manually
-curl -s -X POST http://localhost/api/notifications/check \
+curl -s -X POST http://localhost:8092/api/notifications/check \
   -H "X-Cron-Secret: <CRON_SECRET>"
 
 # Check TELEGRAM_CHAT_ID is set
@@ -218,17 +268,10 @@ If empty, the volume mount failed — verify the `data/` directory exists on the
 
 **Frontend shows "Failed to load tasks"**
 
-The frontend dev server is probably not running or the backend is down:
-
 ```bash
 docker compose ps
 docker compose logs backend --tail=20
-```
-
-For production, check nginx is proxying to backend:
-
-```bash
-curl -u admin:yourpassword http://localhost/api/tasks
+curl -u admin:<password> http://localhost:8092/api/tasks
 ```
 
 ---
