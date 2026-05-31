@@ -4,6 +4,7 @@ import { readAll } from '../tasks/store';
 import { getBot } from './bot';
 import { startOfDay, parseISO, isBefore, isEqual, addDays, format } from 'date-fns';
 import { InlineKeyboard } from 'grammy';
+import { formatDate } from '../lib/date';
 
 function getNotificationsFile(): string {
   return process.env.NOTIFICATIONS_FILE || './data/notifications-sent.json';
@@ -52,7 +53,7 @@ export async function checkAndNotify(): Promise<void> {
         if (!sent[key]) {
           await bot.api.sendMessage(
             chatId,
-            `⚠️ Overdue: ${task.title} (${task.id})\nDue: ${task.due_date} · Status: ${task.status}`,
+            `⚠️ Overdue: ${task.title} (${task.id})\nDue: ${formatDate(task.due_date)} · Status: ${task.status}`,
             { reply_markup: keyboard }
           );
           sent[key] = true;

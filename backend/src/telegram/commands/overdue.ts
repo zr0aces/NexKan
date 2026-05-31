@@ -1,9 +1,10 @@
 import { readAll } from '../../tasks/store';
 import { Task } from '../../types/task';
 import { escapeMd } from '../utils';
+import { formatDate } from '../../lib/date';
 
 function formatTask(t: Task): string {
-  const due = t.due_date ? ` · Due: ${t.due_date}` : '';
+  const due = t.due_date ? ` · Due: ${formatDate(t.due_date)}` : '';
   return `• ${escapeMd(t.title)} (${t.id})${due}`;
 }
 

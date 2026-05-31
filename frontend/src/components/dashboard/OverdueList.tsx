@@ -1,5 +1,5 @@
-import { format, parseISO } from 'date-fns';
 import { Task } from '@/types/task';
+import { formatDate } from '@/lib/date';
 import { AlertTriangle } from 'lucide-react';
 
 interface OverdueListProps {
@@ -18,7 +18,7 @@ export function OverdueList({ tasks }: OverdueListProps) {
           <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
           <span className="flex-1 truncate">{task.title}</span>
           <span className="text-red-600 text-xs whitespace-nowrap">
-            {task.due_date ? format(parseISO(task.due_date), 'MMM d') : ''}
+            {task.due_date ? formatDate(task.due_date) : ''}
           </span>
         </div>
       ))}

@@ -1,6 +1,7 @@
 import * as chrono from 'chrono-node';
 import { format } from 'date-fns';
 import { create } from '../../tasks/store';
+import { formatDate } from '../../lib/date';
 
 export async function handleAdd(ctx: any): Promise<void> {
   try {
@@ -22,7 +23,7 @@ export async function handleAdd(ctx: any): Promise<void> {
     }
 
     const task = await create({ title, due_date, status: 'todo', description: '' });
-    await ctx.reply(`✅ Task created: ${task.title} (${task.id})${due_date ? `\nDue: ${due_date}` : ''}`);
+    await ctx.reply(`✅ Task created: ${task.title} (${task.id})${due_date ? `\nDue: ${formatDate(due_date)}` : ''}`);
   } catch (err) {
     const msg = err instanceof Error && err.message.includes('due_date')
       ? '⚠️ A due date is required.\nExample: /add Buy milk tomorrow'

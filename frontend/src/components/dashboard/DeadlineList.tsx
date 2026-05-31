@@ -1,5 +1,5 @@
-import { format, parseISO } from 'date-fns';
 import { Task } from '@/types/task';
+import { formatDate } from '@/lib/date';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
 
 interface DeadlineListProps {
@@ -20,7 +20,7 @@ export function DeadlineList({ tasks, title }: DeadlineListProps) {
             {task.priority && <PriorityBadge priority={task.priority} />}
             {task.due_date && (
               <span className="text-muted-foreground text-xs whitespace-nowrap">
-                {format(parseISO(task.due_date), 'MMM d')}
+                {formatDate(task.due_date)}
               </span>
             )}
           </div>

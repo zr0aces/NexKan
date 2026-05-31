@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { format, isAfter, startOfDay, parseISO } from 'date-fns';
+import { isAfter, startOfDay, parseISO } from 'date-fns';
+import { formatDate } from '@/lib/date';
 import { GripVertical, Calendar } from 'lucide-react';
 import { Task } from '@/types/task';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
@@ -63,7 +64,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
             {task.due_date && (
               <span className={cn('flex items-center gap-1 text-xs text-muted-foreground', overdue && 'text-destructive')}>
                 <Calendar className="h-3 w-3" />
-                {format(parseISO(task.due_date), 'MMM d')}
+                {formatDate(task.due_date)}
               </span>
             )}
             {task.tags.slice(0, 2).map(tag => <TagBadge key={tag} tag={tag} />)}

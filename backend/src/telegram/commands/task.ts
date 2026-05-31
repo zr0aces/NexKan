@@ -1,6 +1,7 @@
 import { readById } from '../../tasks/store';
 import { InlineKeyboard } from 'grammy';
 import { escapeMd } from '../utils';
+import { formatDate } from '../../lib/date';
 
 export async function handleTask(ctx: any): Promise<void> {
   try {
@@ -19,7 +20,7 @@ export async function handleTask(ctx: any): Promise<void> {
     const lines = [
       `*${escapeMd(task.title)}* (${task.id})`,
       `Status: ${task.status}`,
-      task.due_date ? `Due: ${task.due_date}` : '',
+      task.due_date ? `Due: ${formatDate(task.due_date)}` : '',
       task.priority ? `Priority: ${task.priority}` : '',
       task.tags.length > 0 ? `Tags: ${task.tags.join(', ')}` : '',
       task.description ? `\n${task.description}` : '',

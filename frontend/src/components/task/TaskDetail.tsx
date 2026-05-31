@@ -1,5 +1,5 @@
-import { format, parseISO } from 'date-fns';
 import { Task } from '@/types/task';
+import { formatDate } from '@/lib/date';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
 import { TagBadge } from '@/components/shared/TagBadge';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +25,7 @@ export function TaskDetail({ task }: TaskDetailProps) {
       {task.due_date && (
         <div className="text-sm">
           <span className="font-medium">Due: </span>
-          {format(parseISO(task.due_date), 'MMMM d, yyyy')}
+          {formatDate(task.due_date)}
         </div>
       )}
 

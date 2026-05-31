@@ -6,7 +6,8 @@ import { DeadlineList } from '@/components/dashboard/DeadlineList';
 import { OverdueList } from '@/components/dashboard/OverdueList';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { AlertTriangle, Clock, CheckSquare, List } from 'lucide-react';
-import { startOfDay, parseISO, isBefore, isEqual, addDays, format } from 'date-fns';
+import { startOfDay, parseISO, isBefore, isEqual, addDays } from 'date-fns';
+import { formatDate } from '@/lib/date';
 
 export default function DashboardPage() {
   const { data: tasks = [], isLoading } = useTasks();
@@ -20,8 +21,8 @@ export default function DashboardPage() {
       tomorrowTasks:  tasks.filter(task => task.due_date && task.status !== 'done' && isEqual(startOfDay(parseISO(task.due_date)), tm)),
       activeTasks:    tasks.filter(task => task.status !== 'done'),
       doneTasks:      tasks.filter(task => task.status === 'done'),
-      todayLabel:     format(t, 'MMM d'),
-      tomorrowLabel:  format(tm, 'MMM d'),
+      todayLabel:     formatDate(t),
+      tomorrowLabel:  formatDate(tm),
     };
   }, [tasks]);
 
