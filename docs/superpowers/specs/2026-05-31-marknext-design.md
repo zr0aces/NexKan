@@ -142,11 +142,13 @@ backend/
       middleware.ts       ← webhook-auth + cron-auth
     ai/
       interface.ts        ← AIProvider interface
-      context.ts          ← builds task context objects for AI consumption
-      router.ts           ← /api/ai/* route stubs
+      tools.ts            ← AI tool definitions mapping to tasks/store.ts
+      context.ts          ← system prompt builder (task state → AI context)
+      session.ts          ← in-memory chat history keyed by Telegram chat ID
+      router.ts           ← /api/ai/* endpoints
       providers/
-        stub.ts           ← default no-op provider (always returns empty/null)
-        anthropic.ts      ← Claude integration (future — not wired in v1)
+        stub.ts           ← default no-op provider (always returns "AI not enabled")
+        anthropic.ts      ← Claude with tool use (wire when AI_PROVIDER=anthropic)
     types/
       task.ts             ← shared Task interface
     app.ts                ← mounts tasks/, telegram/, ai/ routers
@@ -192,10 +194,9 @@ POST   /api/notifications/check    ← OS cron hits this (no nginx auth, X-Cron-
 GET    /api/telegram/status
 POST   /api/telegram/test
 
-# AI (stubs — return 501 when AI_ENABLED=false)
-POST   /api/ai/suggest             ← suggest tags/priority/due_date for a task
-POST   /api/ai/chat                ← natural language task management
-POST   /api/ai/daily-brief         ← generate daily task summary
+# AI (return 501 when AI_ENABLED=false)
+POST   /api/ai/chat                ← natural language assistant with full task CRUD via tools
+POST   /api/ai/brief               ← AI daily summary (stateless, no session)
 GET    /api/ai/status              ← AI provider connection status
 ```
 
@@ -256,72 +257,197 @@ try {
 ### Module Boundaries
 
 - `telegram/` imports from `tasks/store.ts` directly (same process). No HTTP between modules.
-- `ai/` imports from `tasks/store.ts` via `ai/context.ts` only.
+- `ai/` calls `tasks/store.ts` directly via tool handlers in `ai/tools.ts`.
 - `tasks/` has zero knowledge of `telegram/` or `ai/`.
 
 ---
 
-## 2b. AI Integration (Future-Ready)
+## 2b. AI Personal Assistant
 
-AI is feature-flagged. When `AI_ENABLED=false` (default), all `/api/ai/*` endpoints return `501 Not Implemented` and Telegram AI commands reply "AI not enabled." System works fully without AI configured.
+AI is feature-flagged. When `AI_ENABLED=false` (default), all `/api/ai/*` endpoints return `501` and Telegram AI commands reply "AI not enabled." No stub calls slow the system — gate checked at request entry.
+
+The AI is a **full personal assistant** with read + write access to tasks. It understands natural language, reasons about the task board, and executes actions (create, edit, move, delete) autonomously via tool use.
+
+### Agentic Loop
+
+```
+User message
+  → ai/router.ts
+    → context.ts builds system prompt (today's date, overdue count, task summary)
+    → provider.chat(message, history, tools)
+      → AI reasons, decides which tools to call
+      → tool executor calls tasks/store.ts
+      → results returned to AI
+      → AI may call more tools (multi-step reasoning)
+    → AI returns final text response
+  → reply to user
+```
+
+Example: `"move all overdue tasks to done"`
+1. AI calls `list_tasks({overdue: true})`
+2. AI calls `move_task("a3f9", "done")`, `move_task("b2x9", "done")`, ...
+3. AI replies: "Moved 3 overdue tasks to Done: Buy groceries, Deploy backend, Write report."
 
 ### AIProvider Interface (ai/interface.ts)
 
 ```typescript
 interface AIProvider {
-  suggestMetadata(task: Task): Promise<AISuggestion>;
-  chat(message: string, context: TaskContext): Promise<string>;
-  dailyBrief(tasks: Task[]): Promise<string>;
+  chat(
+    message: string,
+    history: ChatMessage[],
+    tools: AIToolDefinition[],
+    systemPrompt: string
+  ): Promise<AIResponse>;
   isAvailable(): boolean;
 }
 
-interface AISuggestion {
-  tags?: string[];
-  priority?: 'low' | 'medium' | 'high';
-  due_date?: string;        // YYYY-MM-DD
-  summary?: string;
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface AIResponse {
+  toolCalls?: AIToolCall[];   // AI wants to execute tools
+  message?: string;           // final text response (no more tool calls)
+}
+
+interface AIToolCall {
+  name: string;
+  input: Record<string, unknown>;
 }
 ```
 
-### Task Context (ai/context.ts)
+### AI Tools (ai/tools.ts)
 
-Builds a structured view of tasks for AI consumption:
+Tools the AI can call. Each maps to a `tasks/store.ts` function.
 
 ```typescript
-interface TaskContext {
-  task?: Task;              // current task (for per-task operations)
-  recentTasks: Task[];      // last 20 active tasks (for context)
-  overdueCount: number;
-  dueTodayCount: number;
+const AI_TOOLS: AIToolDefinition[] = [
+  {
+    name: 'list_tasks',
+    description: 'List tasks with optional filters. Use to read the board state.',
+    input: {
+      status?: 'plan' | 'todo' | 'in-progress' | 'done' | string,  // comma-separated
+      tags?: string,        // comma-separated
+      priority?: string,
+      overdue?: boolean,    // due_date < today
+      due_today?: boolean,
+      due_tomorrow?: boolean,
+      search?: string,      // title/tags only
+    }
+  },
+  {
+    name: 'get_task',
+    description: 'Get full details of a single task by ID.',
+    input: { id: string }
+  },
+  {
+    name: 'create_task',
+    description: 'Create a new task.',
+    input: {
+      title: string,            // required
+      description?: string,
+      due_date?: string,        // YYYY-MM-DD
+      priority?: 'low' | 'medium' | 'high',
+      tags?: string[],
+      status?: 'plan' | 'todo' | 'in-progress',  // default: plan
+    }
+  },
+  {
+    name: 'update_task',
+    description: 'Edit task fields. Only provided fields are updated.',
+    input: {
+      id: string,               // required
+      title?: string,
+      description?: string,
+      notes?: string,
+      due_date?: string,        // YYYY-MM-DD
+      priority?: 'low' | 'medium' | 'high',
+      tags?: string[],
+    }
+  },
+  {
+    name: 'move_task',
+    description: 'Change task status (move between Kanban columns).',
+    input: {
+      id: string,
+      status: 'plan' | 'todo' | 'in-progress' | 'done',
+      due_date?: string,        // required if moving to todo/in-progress and task has none
+    }
+  },
+  {
+    name: 'delete_task',
+    description: 'Permanently delete a task. Use only when user explicitly asks.',
+    input: { id: string }
+  },
+]
+```
+
+### Context Builder (ai/context.ts)
+
+Builds system prompt from current board state. Injected on every chat call.
+
+```
+You are a personal task assistant. Today is {YYYY-MM-DD} ({TZ}).
+Board state: {total} tasks — {overdue} overdue, {due_today} due today, {done_today} completed today.
+Active tasks: {plan_count} in Plan, {todo_count} in Todo, {inprogress_count} In Progress.
+You can read and modify tasks using the provided tools.
+When deleting, confirm intent if not explicit. When moving to todo/in-progress, ensure due_date is set.
+```
+
+### Chat History (ai/session.ts)
+
+In-memory session store. Keyed by source identifier:
+- Web: session cookie or request header `X-Session-ID`
+- Telegram: Telegram chat ID
+
+```typescript
+// Max 20 messages per session (sliding window)
+// Cleared on server restart (acceptable for personal use — no persistence needed)
+const sessions = new Map<string, ChatMessage[]>();
+```
+
+### API Endpoint
+
+```
+POST /api/ai/chat
+Body: { message: string, sessionId?: string }
+Response: {
+  reply: string,
+  actions: AIAction[]   // audit log of what AI did
+}
+
+interface AIAction {
+  tool: string;                                          // e.g. "move_task"
+  description: string;                                   // e.g. "Moved 'Buy groceries' → done"
+  taskId?: string;
 }
 ```
 
 ### Providers
 
-| Provider | File | Status |
-|----------|------|--------|
-| Stub | `providers/stub.ts` | Default — always returns null/empty |
-| Anthropic Claude | `providers/anthropic.ts` | Future — wire when `AI_PROVIDER=anthropic` |
+| Provider | File | Notes |
+|----------|------|-------|
+| Stub | `providers/stub.ts` | Returns "AI not enabled." No API calls. |
+| Anthropic Claude | `providers/anthropic.ts` | Tool use via Anthropic SDK. Model: claude-sonnet-4-6 by default. |
 
-Provider resolved at startup via `AI_PROVIDER` env var. Fallback to stub if provider fails to initialize.
+Provider resolved at startup via `AI_PROVIDER` env var. Falls back to stub if init fails.
 
-### Telegram AI Commands (stubs in v1)
+### Telegram AI Commands
 
 | Command | Action |
 |---------|--------|
-| `/ai <prompt>` | Natural language task management (future) |
-| `/brief` | AI-generated daily summary of tasks (future) |
+| `/ai <prompt>` | Sends prompt to `/api/ai/chat`. Session keyed by Telegram chat ID. AI can read and modify tasks. Multi-turn: each `/ai` message continues the same session. |
+| `/brief` | Calls `list_tasks` for all active tasks → AI generates daily summary with priorities and suggestions. No session — stateless call. |
 
-Both return "AI not enabled. Set AI_ENABLED=true in .env." when `AI_ENABLED=false`.
+### Optional Task Fields Written by AI
 
-### Optional Task Fields for AI
+Stored in frontmatter after AI edits:
 
-Stored in frontmatter, written by AI on suggestion acceptance:
+- `ai_summary` — AI-written one-line summary (set after `update_task` or `create_task`)
+- `ai_tags` — tags AI added (merged into `tags` directly — no separate acceptance step)
 
-- `ai_summary` — short AI-generated description of the task
-- `ai_tags` — AI-suggested tags (user can accept → merged into `tags`)
-
-These are never required and ignored when AI is disabled.
+---
 
 ---
 
@@ -574,10 +700,13 @@ TELEGRAM_WEBHOOK_SECRET=
 TELEGRAM_WEBHOOK_URL=https://yourdomain.com/api/webhooks/telegram
 CRON_SECRET=
 
-# AI (optional)
+# AI (optional — system runs fully without these)
 AI_ENABLED=false
-AI_PROVIDER=stub                         # stub | anthropic (future)
+AI_PROVIDER=stub                         # stub | anthropic
 ANTHROPIC_API_KEY=                       # required when AI_PROVIDER=anthropic
+AI_MODEL=claude-sonnet-4-6               # Anthropic model ID
+AI_MAX_TOKENS=1024                       # max tokens per AI response
+AI_SESSION_MAX_MESSAGES=20               # sliding window per chat session
 ```
 
 ### Data Persistence
@@ -617,7 +746,7 @@ Backup strategy: `git init ./data` + commit, or rsync/Syncthing on `./data/`.
 - `backend/` — Node.js + Express + TypeScript (tasks + telegram + ai modules)
 - `backend/src/tasks/store.ts` — markdown file I/O engine
 - `backend/src/telegram/` — grammy bot, commands, notifier (modular)
-- `backend/src/ai/` — provider interface + stub + context builder (future-ready)
+- `backend/src/ai/` — provider interface, tool definitions, agentic loop, session store, Anthropic implementation
 - `backend/scripts/init-data.sh` — data directory initializer
 - `docker-compose.yml` + `backend/Dockerfile`
 - `nginx/` — nginx config with auth + webhook routing
