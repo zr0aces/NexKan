@@ -15,5 +15,6 @@ export function useTask(id: string) {
     queryKey: ['tasks', id],
     queryFn: () => api.tasks.get(id),
     enabled: Boolean(id),
+    staleTime: 30_000,
   });
 }

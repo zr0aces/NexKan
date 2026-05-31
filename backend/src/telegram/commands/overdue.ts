@@ -1,9 +1,10 @@
 import { readAll } from '../../tasks/store';
 import { Task } from '../../types/task';
+import { escapeMd } from '../utils';
 
 function formatTask(t: Task): string {
   const due = t.due_date ? ` · Due: ${t.due_date}` : '';
-  return `• ${t.title} (${t.id})${due}`;
+  return `• ${escapeMd(t.title)} (${t.id})${due}`;
 }
 
 export async function handleOverdue(ctx: any): Promise<void> {

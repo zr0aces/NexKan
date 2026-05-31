@@ -23,7 +23,10 @@ export async function handleAdd(ctx: any): Promise<void> {
 
     const task = await create({ title, due_date, status: 'todo', description: '' });
     await ctx.reply(`✅ Task created: ${task.title} (${task.id})${due_date ? `\nDue: ${due_date}` : ''}`);
-  } catch {
-    await ctx.reply('Something went wrong. Try again.');
+  } catch (err) {
+    const msg = err instanceof Error && err.message.includes('due_date')
+      ? '⚠️ A due date is required.\nExample: /add Buy milk tomorrow'
+      : 'Something went wrong. Try again.';
+    await ctx.reply(msg);
   }
 }

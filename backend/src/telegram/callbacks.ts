@@ -1,5 +1,6 @@
 import { updateStatus, readById } from '../tasks/store';
 import { InlineKeyboard } from 'grammy';
+import { escapeMd } from './utils';
 
 export async function handleCallback(ctx: any): Promise<void> {
   const data: string = ctx.callbackQuery?.data ?? '';
@@ -30,7 +31,7 @@ export async function handleCallback(ctx: any): Promise<void> {
         return;
       }
       const lines = [
-        `*${task.title}* (${task.id})`,
+        `*${escapeMd(task.title)}* (${task.id})`,
         `Status: ${task.status}`,
         task.due_date ? `Due: ${task.due_date}` : '',
         task.priority ? `Priority: ${task.priority}` : '',

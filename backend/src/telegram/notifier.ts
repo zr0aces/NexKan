@@ -86,6 +86,10 @@ export async function checkAndNotify(): Promise<void> {
       }
     }
   } finally {
-    saveSent(sent);
+    try {
+      saveSent(sent);
+    } catch (e) {
+      console.error('Failed to persist notification state:', e);
+    }
   }
 }

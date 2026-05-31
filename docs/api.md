@@ -82,10 +82,10 @@ Content-Type: application/json
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | string | yes | Task title |
-| `status` | string | no | Default: `plan` |
+| `status` | string | no | `todo` \| `in-progress` \| `done`. Default: `todo` |
 | `description` | string | no | Main body text |
 | `notes` | string | no | Secondary notes |
-| `due_date` | string | no | `YYYY-MM-DD`. Required if status is `todo` or `in-progress` |
+| `due_date` | string | no | `YYYY-MM-DD`. **Required** when status is `todo` or `in-progress` |
 | `priority` | string | no | `low` \| `medium` \| `high` |
 | `tags` | string[] | no | Array of tag strings |
 
@@ -119,7 +119,7 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `status` | string | yes | `plan` \| `todo` \| `in-progress` \| `done` |
+| `status` | string | yes | `todo` \| `in-progress` \| `done` |
 | `due_date` | string | no | Provide if moving to `todo`/`in-progress` and task has no due date |
 
 Moving to `todo` or `in-progress` without a `due_date` (on task or in body) returns `400`.

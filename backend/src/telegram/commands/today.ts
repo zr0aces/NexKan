@@ -1,10 +1,11 @@
 import { readAll } from '../../tasks/store';
 import { Task } from '../../types/task';
+import { escapeMd } from '../utils';
 
 function formatTask(t: Task): string {
   const priority = t.priority ? ` [${t.priority}]` : '';
   const status = ` · ${t.status}`;
-  return `• ${t.title} (${t.id})${priority}${status}`;
+  return `• ${escapeMd(t.title)} (${t.id})${priority}${status}`;
 }
 
 export async function handleToday(ctx: any): Promise<void> {

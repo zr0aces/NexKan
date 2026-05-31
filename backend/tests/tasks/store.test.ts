@@ -120,7 +120,7 @@ describe('readById', () => {
 
 describe('create', () => {
   it('creates a file with generated ID and correct frontmatter', async () => {
-    const task = await create({ title: 'New Task', description: 'Do it.' });
+    const task = await create({ title: 'New Task', due_date: '2099-12-31', description: 'Do it.' });
     expect(task.id).toHaveLength(8);
     expect(task.title).toBe('New Task');
     expect(task.status).toBe('todo');
@@ -135,7 +135,7 @@ describe('create', () => {
 
   it('assigns sort_order = max + 1 in column', async () => {
     writeTask(makeTask({ id: 'aaa11111', title: 'Existing', status: 'todo', sort_order: 5 }));
-    const task = await create({ title: 'New Task', status: 'todo', description: 'x' });
+    const task = await create({ title: 'New Task', status: 'todo', due_date: '2099-12-31', description: 'x' });
     expect(task.sort_order).toBe(6);
   });
 

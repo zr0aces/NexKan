@@ -97,7 +97,7 @@ describe('POST /api/tasks', () => {
   it('creates a task and returns 201', async () => {
     const res = await request(app)
       .post('/api/tasks')
-      .send({ title: 'New Task', description: 'Do it.' });
+      .send({ title: 'New Task', due_date: '2099-12-31', description: 'Do it.' });
     expect(res.status).toBe(201);
     expect(res.body.id).toBeTruthy();
     expect(res.body.title).toBe('New Task');

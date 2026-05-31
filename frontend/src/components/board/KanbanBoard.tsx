@@ -27,7 +27,6 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [dragError, setDragError] = useState<string | null>(null);
   const [activeColumn, setActiveColumn] = useState<TaskStatus>('todo');
-
   const [isDragging, setIsDragging] = useState(false);
 
   const updateStatus = useUpdateTaskStatus();
@@ -66,50 +65,53 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
   }
 
   async function handleDragEnd({ active, over }: DragEndEvent) {
-    setIsDragging(false);
-
-    if (!over) {
-      setLocalTasks(tasks);
-      return;
-    }
-
-    const activeTask = localTasks.find(t => t.id === active.id);
-    if (!activeTask) return;
-
-    const overStatus = STATUSES.find(s => s === over.id);
-    const overTask = localTasks.find(t => t.id === over.id);
-
-    if (overStatus && activeTask.status !== overStatus) {
-      const originalTask = tasks.find(t => t.id === active.id);
-      if (!originalTask) {
+    // setIsDragging(false) is in finally — fires AFTER all awaits to preserve optimistic state
+    try {
+      if (!over) {
         setLocalTasks(tasks);
         return;
       }
-      if (originalTask.status !== overStatus) {
-        try {
-          await updateStatus.mutateAsync({ id: activeTask.id, status: overStatus });
-        } catch (err) {
+
+      const activeTask = localTasks.find(t => t.id === active.id);
+      if (!activeTask) return;
+
+      const overStatus = STATUSES.find(s => s === over.id);
+      const overTask = localTasks.find(t => t.id === over.id);
+
+      if (overStatus && activeTask.status !== overStatus) {
+        const originalTask = tasks.find(t => t.id === active.id);
+        if (!originalTask) {
           setLocalTasks(tasks);
-          const msg =
-            err instanceof Error && err.message.includes('due_date')
-              ? 'Set a due date before moving to this column.'
-              : 'Failed to move task.';
-          setDragError(msg);
-          setTimeout(() => setDragError(null), 3000);
+          return;
+        }
+        if (originalTask.status !== overStatus) {
+          try {
+            await updateStatus.mutateAsync({ id: activeTask.id, status: overStatus });
+          } catch (err) {
+            setLocalTasks(tasks);
+            const msg =
+              err instanceof Error && err.message.includes('due_date')
+                ? 'Set a due date before moving to this column.'
+                : 'Failed to move task.';
+            setDragError(msg);
+            setTimeout(() => setDragError(null), 3000);
+          }
+        }
+        return;
+      }
+
+      if (overTask && overTask.id !== activeTask.id && overTask.status === activeTask.status) {
+        const columnTasks = getColumnTasks(activeTask.status);
+        const newPosition = columnTasks.findIndex(t => t.id === overTask.id);
+        if (newPosition === -1) return;
+        try {
+          await updateOrder.mutateAsync({ id: activeTask.id, position: newPosition });
+        } catch {
+          setLocalTasks(tasks);
         }
       }
-      return;
-    }
-
-    if (overTask && overTask.id !== activeTask.id && overTask.status === activeTask.status) {
-      const columnTasks = getColumnTasks(activeTask.status);
-      const newPosition = columnTasks.findIndex(t => t.id === overTask.id);
-      if (newPosition === -1) return;
-      try {
-        await updateOrder.mutateAsync({ id: activeTask.id, position: newPosition });
-      } catch {
-        setLocalTasks(tasks);
-      }
+    } finally {
+      setIsDragging(false);
     }
   }
 
@@ -126,7 +128,7 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
           {dragError}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {STATUSES.map(status => (
           <div
             key={status}

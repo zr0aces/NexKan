@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTasks } from '@/hooks/useTasks';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -7,29 +8,22 @@ import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { AlertTriangle, Clock, CheckSquare, List } from 'lucide-react';
 import { startOfDay, parseISO, isBefore, isEqual, addDays, format } from 'date-fns';
 
-function today() { return startOfDay(new Date()); }
-function tomorrow() { return addDays(today(), 1); }
-
-function isOverdue(dueDate: string, status: string): boolean {
-  return status !== 'done' && isBefore(startOfDay(parseISO(dueDate)), today());
-}
-
-function isDueToday(dueDate: string): boolean {
-  return isEqual(startOfDay(parseISO(dueDate)), today());
-}
-
-function isDueTomorrow(dueDate: string): boolean {
-  return isEqual(startOfDay(parseISO(dueDate)), tomorrow());
-}
-
 export default function DashboardPage() {
   const { data: tasks = [], isLoading } = useTasks();
 
-  const overdueTasks = tasks.filter(t => t.due_date && isOverdue(t.due_date, t.status));
-  const todayTasks = tasks.filter(t => t.due_date && isDueToday(t.due_date) && t.status !== 'done');
-  const tomorrowTasks = tasks.filter(t => t.due_date && isDueTomorrow(t.due_date) && t.status !== 'done');
-  const activeTasks = tasks.filter(t => t.status !== 'done');
-  const doneTasks = tasks.filter(t => t.status === 'done');
+  const { overdueTasks, todayTasks, tomorrowTasks, activeTasks, doneTasks, todayLabel, tomorrowLabel } = useMemo(() => {
+    const t = startOfDay(new Date());
+    const tm = addDays(t, 1);
+    return {
+      overdueTasks:   tasks.filter(task => task.due_date && task.status !== 'done' && isBefore(startOfDay(parseISO(task.due_date)), t)),
+      todayTasks:     tasks.filter(task => task.due_date && task.status !== 'done' && isEqual(startOfDay(parseISO(task.due_date)), t)),
+      tomorrowTasks:  tasks.filter(task => task.due_date && task.status !== 'done' && isEqual(startOfDay(parseISO(task.due_date)), tm)),
+      activeTasks:    tasks.filter(task => task.status !== 'done'),
+      doneTasks:      tasks.filter(task => task.status === 'done'),
+      todayLabel:     format(t, 'MMM d'),
+      tomorrowLabel:  format(tm, 'MMM d'),
+    };
+  }, [tasks]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,8 +59,8 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-4">
-                <DeadlineList tasks={todayTasks} title={`Due Today (${format(today(), 'MMM d')})`} />
-                <DeadlineList tasks={tomorrowTasks} title={`Due Tomorrow (${format(tomorrow(), 'MMM d')})`} />
+                <DeadlineList tasks={todayTasks} title={`Due Today (${todayLabel})`} />
+                <DeadlineList tasks={tomorrowTasks} title={`Due Tomorrow (${tomorrowLabel})`} />
               </div>
             </div>
           </>

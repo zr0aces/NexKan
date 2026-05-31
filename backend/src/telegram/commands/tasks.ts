@@ -1,10 +1,11 @@
 import { readAll } from '../../tasks/store';
 import { Task } from '../../types/task';
+import { escapeMd } from '../utils';
 
 function formatTask(t: Task): string {
   const due = t.due_date ? ` · Due: ${t.due_date}` : '';
   const priority = t.priority ? ` [${t.priority}]` : '';
-  return `• ${t.title} (${t.id})${priority}${due}`;
+  return `• ${escapeMd(t.title)} (${t.id})${priority}${due}`;
 }
 
 export async function handleTasks(ctx: any): Promise<void> {

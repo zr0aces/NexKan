@@ -147,6 +147,10 @@ export async function create(input: CreateTaskInput): Promise<Task> {
 
   const id = nanoid(8);
   const status = input.status ?? 'todo';
+  const requiresDueDate = status === 'todo' || status === 'in-progress';
+  if (requiresDueDate && !input.due_date) {
+    throw new Error(`due_date is required when creating a task with status ${status}`);
+  }
   const now = new Date().toISOString();
 
   const allTasks = await readAllFiles();
@@ -231,6 +235,7 @@ export async function updateStatus(id: string, status: string, due_date?: string
 }
 
 export async function updateOrder(id: string, position: number): Promise<Task> {
+  const dir = getDataDir();
   const task = await readById(id);
   if (!task) throw new NotFoundError(id);
 
@@ -242,10 +247,17 @@ export async function updateOrder(id: string, position: number): Promise<Task> {
   const others = inColumn.filter(t => t.id !== id);
   others.splice(position, 0, task);
 
-  // Snapshot originals for rollback
+  // Single readdirSync to build id→path map — avoids N×readdirSync in the loop
+  const dirFiles = fs.readdirSync(dir);
+  function pathFor(taskId: string): string {
+    const file = dirFiles.find(f => f.startsWith(`${taskId}-`) && f.endsWith('.md'));
+    if (!file) throw new NotFoundError(taskId);
+    return path.join(dir, file);
+  }
+
   const snapshots: Array<{ path: string; content: string }> = [];
   for (const t of others) {
-    const fp = await findFilePath(t.id);
+    const fp = pathFor(t.id);
     snapshots.push({ path: fp, content: fs.readFileSync(fp, 'utf-8') });
   }
 

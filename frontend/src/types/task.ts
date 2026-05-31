@@ -40,6 +40,9 @@ export interface TaskFilters {
   status?: string;
   tags?: string;
   priority?: TaskPriority;
+  overdue?: boolean;
+  due_today?: boolean;
+  due_tomorrow?: boolean;
   search?: string;
   sort?: string;
 }
