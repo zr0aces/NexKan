@@ -7,3 +7,21 @@ backend/data/notifications-sent.json
 data/
 nginx/.htpasswd
 frontend/dist/
+
+# Agent memory and rules
+AGENT.md
+.agent/
+.claude/
+.agents/
+.agent-mem/
+.cursor/
+.cursorrules
+.windsurf/
+.windsurfrules
+.cline/
+.clinerules
+.roo/
+.gemini/
+.brainsync/
+cache/
+graphify-out/
