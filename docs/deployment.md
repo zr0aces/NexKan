@@ -30,6 +30,10 @@ cp backend/.env.example .env
 Edit `.env`:
 
 ```bash
+# Auth
+AUTH_USER=admin
+AUTH_PASSWORD=<strong-password>   # nginx basic auth credentials
+
 # Required
 TELEGRAM_BOT_TOKEN=1234567890:ABCdef...
 TELEGRAM_CHAT_ID=987654321
@@ -56,25 +60,20 @@ echo '{}' > data/notifications-sent.json
 cd frontend && npm install && npm run build && cd ..
 ```
 
-### 5. Create nginx credentials
-
-```bash
-# Replace 'yourpassword' with a strong password
-docker run --rm httpd:alpine htpasswd -nb admin yourpassword > nginx/.htpasswd
-```
-
-### 6. Start the stack
+### 5. Start the stack
 
 ```bash
 docker compose up --build -d
 ```
+
+nginx reads `AUTH_USER` and `AUTH_PASSWORD` from `.env` and generates `/etc/nginx/.htpasswd` inside the container at startup. No manual htpasswd step needed.
 
 Verify:
 
 ```bash
 docker compose ps          # both containers should be Up
 docker compose logs backend --tail=20
-curl -u admin:yourpassword http://localhost/api/tasks   # should return []
+curl -u admin:<AUTH_PASSWORD> http://localhost/api/tasks   # should return []
 ```
 
 ---
