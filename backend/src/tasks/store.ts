@@ -237,14 +237,29 @@ export async function updateOrder(id: string, position: number): Promise<Task> {
   const others = inColumn.filter(t => t.id !== id);
   others.splice(position, 0, task);
 
-  for (let i = 0; i < others.length; i++) {
-    const t = others[i];
+  // Snapshot originals for rollback
+  const snapshots: Array<{ path: string; content: string }> = [];
+  for (const t of others) {
     const fp = await findFilePath(t.id);
-    const fileContent = fs.readFileSync(fp, 'utf-8');
-    const parsed = parseTask(fileContent, path.basename(fp));
-    parsed.sort_order = i + 1;
-    parsed.updated_at = new Date().toISOString();
-    fs.writeFileSync(fp, serializeTask(parsed));
+    snapshots.push({ path: fp, content: fs.readFileSync(fp, 'utf-8') });
+  }
+
+  try {
+    for (let i = 0; i < others.length; i++) {
+      const t = others[i];
+      const fp = snapshots[i].path;
+      const fileContent = fs.readFileSync(fp, 'utf-8');
+      const parsed = parseTask(fileContent, path.basename(fp));
+      parsed.sort_order = i + 1;
+      parsed.updated_at = new Date().toISOString();
+      fs.writeFileSync(fp, serializeTask(parsed));
+    }
+  } catch (err) {
+    // Restore originals
+    for (const snap of snapshots) {
+      try { fs.writeFileSync(snap.path, snap.content); } catch { /* best effort */ }
+    }
+    throw err;
   }
 
   return (await readById(id))!;

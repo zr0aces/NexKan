@@ -23,6 +23,7 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps) {
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+  const [dragError, setDragError] = useState<string | null>(null);
 
   const updateStatus = useUpdateTaskStatus();
   const updateOrder = useUpdateTaskOrder();
@@ -78,8 +79,13 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
       if (originalTask && originalTask.status !== overStatus) {
         try {
           await updateStatus.mutateAsync({ id: activeTask.id, status: overStatus });
-        } catch {
+        } catch (err) {
           setLocalTasks(tasks);
+          const msg = err instanceof Error && err.message.includes('due_date')
+            ? 'Set a due date before moving to this column.'
+            : 'Failed to move task.';
+          setDragError(msg);
+          setTimeout(() => setDragError(null), 3000);
         }
       }
       return;
@@ -105,6 +111,11 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
+      {dragError && (
+        <div className="mb-2 px-3 py-2 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-md">
+          {dragError}
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {STATUSES.map(status => (
           <KanbanColumn

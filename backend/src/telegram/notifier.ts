@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import { readAll } from '../tasks/store';
 import { getBot } from './bot';
 import { startOfDay, parseISO, isBefore, isEqual, addDays, format } from 'date-fns';
@@ -17,7 +18,9 @@ function loadSent(): Record<string, boolean> {
 }
 
 function saveSent(sent: Record<string, boolean>): void {
-  fs.writeFileSync(getNotificationsFile(), JSON.stringify(sent, null, 2));
+  const filePath = getNotificationsFile();
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(sent, null, 2));
 }
 
 function todayStr(): string {

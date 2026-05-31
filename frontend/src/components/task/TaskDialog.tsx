@@ -53,6 +53,11 @@ export function TaskDialog({ task, defaultStatus = 'plan', open, onOpenChange }:
 
   async function handleSave() {
     if (!title.trim()) { setError('Title is required'); return; }
+    const requiresDueDate = status === 'todo' || status === 'in-progress';
+    if (requiresDueDate && !dueDate) {
+      setError(`Due date is required for status "${status}"`);
+      return;
+    }
     const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
 
     try {
