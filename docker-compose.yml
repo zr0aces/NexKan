@@ -1,5 +1,6 @@
 services:
   backend:
+    container_name: nexkan-backend
     build: ./backend
     expose:
       - "3000"
@@ -10,6 +11,7 @@ services:
     restart: unless-stopped
 
   nginx:
+    container_name: nexkan-nginx
     image: nginx:alpine
     ports:
       - "8092:80"
