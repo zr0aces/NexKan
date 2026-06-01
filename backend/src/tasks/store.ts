@@ -3,7 +3,8 @@ import * as path from 'path';
 import { nanoid } from 'nanoid';
 import { parseTask, serializeTask } from './parser';
 import { Task, TaskFilters, CreateTaskInput, UpdateTaskInput } from '../types/task';
-import { startOfDay, parseISO, isBefore, isEqual, addDays, format } from 'date-fns';
+import { startOfDay, isBefore, isEqual, addDays, format } from 'date-fns';
+import { parseLocalDate } from '../lib/date';
 
 function getDataDir(): string {
   return process.env.DATA_DIR || path.join(process.cwd(), 'data', 'tasks');
@@ -38,7 +39,7 @@ function todayDate(): Date {
 }
 
 function parseDateStr(dateStr: string): Date {
-  return startOfDay(parseISO(dateStr));
+  return startOfDay(parseLocalDate(dateStr));
 }
 
 function applyFilters(tasks: Task[], filters: TaskFilters): Task[] {

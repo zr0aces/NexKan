@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { isAfter, startOfDay, parseISO } from 'date-fns';
-import { formatDate } from '@/lib/date';
+import { isAfter, startOfDay } from 'date-fns';
+import { parseLocalDate, formatDate } from '@/lib/date';
 import { GripVertical, Calendar } from 'lucide-react';
 import { Task } from '@/types/task';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
@@ -16,7 +16,7 @@ interface TaskCardProps {
 
 function isOverdue(task: Task): boolean {
   if (!task.due_date || task.status === 'done') return false;
-  return isAfter(startOfDay(new Date()), startOfDay(parseISO(task.due_date)));
+  return isAfter(startOfDay(new Date()), startOfDay(parseLocalDate(task.due_date)));
 }
 
 export function TaskCard({ task, onClick }: TaskCardProps) {

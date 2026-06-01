@@ -2,9 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { readAll } from '../tasks/store';
 import { getBot } from './bot';
-import { startOfDay, parseISO, isBefore, isEqual, addDays, format } from 'date-fns';
+import { startOfDay, isBefore, isEqual, addDays, format } from 'date-fns';
 import { InlineKeyboard } from 'grammy';
-import { formatDate } from '../lib/date';
+import { parseLocalDate, formatDate } from '../lib/date';
 
 function getNotificationsFile(): string {
   return process.env.NOTIFICATIONS_FILE || './data/notifications-sent.json';
@@ -45,7 +45,7 @@ export async function checkAndNotify(): Promise<void> {
     for (const task of tasks) {
       if (task.status === 'done' || !task.due_date) continue;
 
-      const dueDate = startOfDay(parseISO(task.due_date));
+      const dueDate = startOfDay(parseLocalDate(task.due_date));
       const keyboard = new InlineKeyboard().text('View Task', `view:${task.id}`);
 
       if (isBefore(dueDate, today)) {
