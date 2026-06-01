@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -6,8 +6,7 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:20-alpine
-RUN apk add --no-cache bash
+FROM node:20-slim
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev

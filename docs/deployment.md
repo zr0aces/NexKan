@@ -279,6 +279,27 @@ curl -u admin:<password> http://localhost:8092/api/tasks
 
 ---
 
+## Docker image & architecture compatibility
+
+To guarantee compatibility with diverse self-hosted environments (including various Raspberry Pi models and Linux VPS architectures), the backend uses `node:20-slim` as its base Docker image.
+
+### Why `node:20-slim`?
+- **Broad Architecture Support**: Debian-based slim images support `linux/amd64` (standard cloud servers), `linux/arm64` (64-bit Raspberry Pi OS), and `linux/arm/v7` (32-bit Raspberry Pi OS).
+- **Alpine Incompatibility**: Official Node.js Alpine images (e.g., `node:20-alpine`) do not provide native support for `linux/arm/v7` and require modern host library support (like `libseccomp2`). Using Alpine-based images on older/32-bit Raspberry Pi OS versions frequently results in immediate container crashes ("exec format error" or time/network faults). The `slim` image uses `glibc` instead of `musl`, mitigating these issues.
+
+### Building Multi-Platform Images
+If you build and push Docker images to a registry (e.g. GitHub Packages or Docker Hub) from a development machine (like `x86_64`) rather than building locally on the target production machine, you must build multi-platform images so that the target pulls the correct architecture binary.
+
+Use **Docker Buildx** to build and push a compatible multi-architecture backend image:
+
+```bash
+docker buildx create --use
+docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 \
+  -t your-registry-user/nexkan-backend:latest --push ./backend
+```
+
+---
+
 ## Resource usage (Raspberry Pi 4)
 
 Typical idle consumption:
