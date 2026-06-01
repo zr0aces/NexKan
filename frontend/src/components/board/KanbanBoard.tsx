@@ -9,13 +9,13 @@ import {
   useSensors,
   closestCorners,
 } from '@dnd-kit/core';
-import { Task, TaskStatus } from '@/types/task';
+import { Task, TaskStatus, TASK_STATUSES } from '@nexkan/shared';
 import { cn } from '@/lib/utils';
 import { KanbanColumn } from './KanbanColumn';
 import { MobileColumnNav } from './MobileColumnNav';
 import { useUpdateTaskStatus, useUpdateTaskOrder } from '@/hooks/useTaskMutation';
 
-const STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done'];
+const STATUSES = TASK_STATUSES;
 
 interface KanbanBoardProps {
   tasks: Task[];

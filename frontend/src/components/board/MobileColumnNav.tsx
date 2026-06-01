@@ -1,6 +1,6 @@
 import { Circle, Loader2, CheckCircle2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Task, TaskStatus } from '@/types/task';
+import { Task, TaskStatus } from '@nexkan/shared';
 import { cn } from '@/lib/utils';
 
 const COLUMNS: Array<{ status: TaskStatus; label: string; Icon: LucideIcon }> = [

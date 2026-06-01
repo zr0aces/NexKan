@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Task, TaskStatus, TaskPriority } from '@/types/task';
+import { Task, TaskStatus, TaskPriority, requiresDueDate } from '@nexkan/shared';
 import { TaskDetail } from './TaskDetail';
 import { useCreateTask, useUpdateTask, useDeleteTask, useUpdateTaskStatus } from '@/hooks/useTaskMutation';
 
@@ -53,8 +53,7 @@ export function TaskDialog({ task, defaultStatus = 'todo', open, onOpenChange }:
 
   async function handleSave() {
     if (!title.trim()) { setError('Title is required'); return; }
-    const requiresDueDate = status === 'todo' || status === 'in-progress';
-    if (requiresDueDate && !dueDate) {
+    if (requiresDueDate(status) && !dueDate) {
       setError(`Due date is required for status "${status}"`);
       return;
     }

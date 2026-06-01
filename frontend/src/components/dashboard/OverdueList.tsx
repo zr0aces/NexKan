@@ -1,5 +1,4 @@
-import { Task } from '@/types/task';
-import { formatDate } from '@/lib/date';
+import { Task, formatDate } from '@nexkan/shared';
 import { AlertTriangle } from 'lucide-react';
 
 interface OverdueListProps {

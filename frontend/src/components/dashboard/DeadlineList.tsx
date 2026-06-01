@@ -1,5 +1,4 @@
-import { Task } from '@/types/task';
-import { formatDate } from '@/lib/date';
+import { Task, formatDate } from '@nexkan/shared';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
 
 interface DeadlineListProps {

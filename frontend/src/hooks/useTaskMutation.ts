@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { CreateTaskInput, UpdateTaskInput } from '../types/task';
+import { CreateTaskInput, UpdateTaskInput } from '@nexkan/shared';
 
 function useInvalidateTasks() {
   const queryClient = useQueryClient();

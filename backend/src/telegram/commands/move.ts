@@ -1,7 +1,5 @@
 import { readById, updateStatus } from '../../tasks/store';
-import { TaskStatus } from '@nexkan/shared';
-
-const VALID_STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done'];
+import { TaskStatus, TASK_STATUSES, requiresDueDate } from '@nexkan/shared';
 
 export async function handleMove(ctx: any): Promise<void> {
   try {
@@ -15,8 +13,8 @@ export async function handleMove(ctx: any): Promise<void> {
     const [id, rawStatus] = parts;
     const status = rawStatus.toLowerCase() as TaskStatus;
 
-    if (!VALID_STATUSES.includes(status)) {
-      await ctx.reply(`Invalid status. Use: ${VALID_STATUSES.join(', ')}`);
+    if (!TASK_STATUSES.includes(status)) {
+      await ctx.reply(`Invalid status. Use: ${TASK_STATUSES.join(', ')}`);
 
       return;
     }
@@ -27,8 +25,7 @@ export async function handleMove(ctx: any): Promise<void> {
       return;
     }
 
-    const requiresDueDate = status === 'todo' || status === 'in-progress';
-    if (requiresDueDate && !task.due_date) {
+    if (requiresDueDate(status) && !task.due_date) {
       await ctx.reply(`Task "${task.title}" has no due date.\nPlease set a due date before moving to ${status}.`);
       return;
     }

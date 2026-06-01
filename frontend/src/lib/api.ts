@@ -1,4 +1,4 @@
-import { Task, CreateTaskInput, UpdateTaskInput, TaskFilters } from '../types/task';
+import { Task, CreateTaskInput, UpdateTaskInput, TaskFilters } from '@nexkan/shared';
 
 const BASE = import.meta.env.VITE_API_URL ?? '/api';
 

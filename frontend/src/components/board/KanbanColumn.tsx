@@ -1,7 +1,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
-import { Task, TaskStatus } from '@/types/task';
+import { Task, TaskStatus } from '@nexkan/shared';
 import { TaskCard } from '@/components/task/TaskCard';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

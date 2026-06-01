@@ -7,7 +7,7 @@ import { TaskDialog } from '@/components/task/TaskDialog';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Button } from '@/components/ui/button';
-import { Task, TaskFilters, TaskStatus } from '@/types/task';
+import { Task, TaskFilters, TaskStatus } from '@nexkan/shared';
 
 export default function BoardPage() {
   const [filters, setFilters] = useState<TaskFilters>({ sort: 'sort_order:asc' });

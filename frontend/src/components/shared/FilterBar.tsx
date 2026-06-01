@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { TaskFilters } from '@/types/task';
+import { TaskFilters } from '@nexkan/shared';
 
 interface FilterBarProps {
   filters: TaskFilters;

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { TaskFilters } from '../types/task';
+import { TaskFilters } from '@nexkan/shared';
 
 export function useTasks(filters: TaskFilters = {}) {
   return useQuery({

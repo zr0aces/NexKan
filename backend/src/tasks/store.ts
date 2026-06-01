@@ -2,9 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { nanoid } from 'nanoid';
 import { parseTask, serializeTask } from './parser';
-import { Task, TaskFilters, CreateTaskInput, UpdateTaskInput } from '@nexkan/shared';
-import { startOfDay, isBefore, isEqual, addDays, format } from 'date-fns';
-import { parseLocalDate } from '@nexkan/shared';
+import { Task, TaskStatus, TaskFilters, CreateTaskInput, UpdateTaskInput, parseLocalDate, requiresDueDate, isOverdue } from '@nexkan/shared';
+import { startOfDay, isEqual, addDays, format } from 'date-fns';
 
 function getDataDir(): string {
   return process.env.DATA_DIR || path.join(process.cwd(), 'data', 'tasks');
@@ -38,10 +37,6 @@ function todayDate(): Date {
   return startOfDay(new Date());
 }
 
-function parseDateStr(dateStr: string): Date {
-  return startOfDay(parseLocalDate(dateStr));
-}
-
 function applyFilters(tasks: Task[], filters: TaskFilters): Task[] {
   let result = tasks;
   const todayD = todayDate();
@@ -62,24 +57,15 @@ function applyFilters(tasks: Task[], filters: TaskFilters): Task[] {
   }
 
   if (filters.overdue) {
-    result = result.filter(t => {
-      if (!t.due_date || t.status === 'done') return false;
-      return isBefore(parseDateStr(t.due_date), todayD);
-    });
+    result = result.filter(t => t.due_date !== undefined && isOverdue(t.due_date, t.status, todayD));
   }
 
   if (filters.due_today) {
-    result = result.filter(t => {
-      if (!t.due_date) return false;
-      return isEqual(parseDateStr(t.due_date), todayD);
-    });
+    result = result.filter(t => t.due_date !== undefined && isEqual(startOfDay(parseLocalDate(t.due_date)), todayD));
   }
 
   if (filters.due_tomorrow) {
-    result = result.filter(t => {
-      if (!t.due_date) return false;
-      return isEqual(parseDateStr(t.due_date), tomorrowD);
-    });
+    result = result.filter(t => t.due_date !== undefined && isEqual(startOfDay(parseLocalDate(t.due_date)), tomorrowD));
   }
 
   if (filters.search) {
@@ -148,8 +134,7 @@ export async function create(input: CreateTaskInput): Promise<Task> {
 
   const id = nanoid(8);
   const status = input.status ?? 'todo';
-  const requiresDueDate = status === 'todo' || status === 'in-progress';
-  if (requiresDueDate && !input.due_date) {
+  if (requiresDueDate(status) && !input.due_date) {
     throw new Error(`due_date is required when creating a task with status ${status}`);
   }
   const now = new Date().toISOString();
@@ -211,9 +196,8 @@ export async function updateStatus(id: string, status: string, due_date?: string
   const content = fs.readFileSync(filePath, 'utf-8');
   const task = parseTask(content, path.basename(filePath));
 
-  const requiresDueDate = status === 'todo' || status === 'in-progress';
   const effectiveDueDate = due_date ?? task.due_date;
-  if (requiresDueDate && !effectiveDueDate) {
+  if (requiresDueDate(status as TaskStatus) && !effectiveDueDate) {
     throw new Error(`due_date is required when moving to ${status}`);
   }
 

@@ -1,7 +1,9 @@
 services:
   backend:
     container_name: nexkan-backend
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     expose:
       - "3000"
     volumes:

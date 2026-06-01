@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { TaskPriority } from '@/types/task';
+import { TaskPriority } from '@nexkan/shared';
 
 const priorityStyles: Record<TaskPriority, string> = {
   high: 'bg-red-100 text-red-800 border-red-200',
