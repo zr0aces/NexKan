@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { readAll, readById, create, update, updateStatus, updateOrder, deleteTask } from '../../src/tasks/store';
 import { serializeTask } from '../../src/tasks/parser';
-import { Task } from '../../src/types/task';
+import { Task } from '@nexkan/shared';
 
 let tmpDir: string;
 

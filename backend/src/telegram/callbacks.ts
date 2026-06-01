@@ -1,7 +1,7 @@
 import { updateStatus, readById } from '../tasks/store';
 import { InlineKeyboard } from 'grammy';
 import { escapeMd } from './utils';
-import { formatDate } from '../lib/date';
+import { formatDate } from '@nexkan/shared';
 
 export async function handleCallback(ctx: any): Promise<void> {
   const data: string = ctx.callbackQuery?.data ?? '';

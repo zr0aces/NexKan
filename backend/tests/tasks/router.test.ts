@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { serializeTask } from '../../src/tasks/parser';
-import { Task } from '../../src/types/task';
+import { Task } from '@nexkan/shared';
 
 let tmpDir: string;
 let app: typeof import('../../src/app').default;

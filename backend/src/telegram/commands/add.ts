@@ -1,7 +1,7 @@
 import * as chrono from 'chrono-node';
 import { format } from 'date-fns';
 import { create } from '../../tasks/store';
-import { formatDate } from '../../lib/date';
+import { formatDate } from '@nexkan/shared';
 
 export async function handleAdd(ctx: any): Promise<void> {
   try {

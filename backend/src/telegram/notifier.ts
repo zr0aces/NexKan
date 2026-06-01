@@ -4,7 +4,7 @@ import { readAll } from '../tasks/store';
 import { getBot } from './bot';
 import { startOfDay, isBefore, isEqual, addDays, format } from 'date-fns';
 import { InlineKeyboard } from 'grammy';
-import { parseLocalDate, formatDate } from '../lib/date';
+import { parseLocalDate, formatDate } from '@nexkan/shared';
 
 function getNotificationsFile(): string {
   return process.env.NOTIFICATIONS_FILE || './data/notifications-sent.json';

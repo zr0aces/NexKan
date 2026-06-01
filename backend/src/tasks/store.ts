@@ -2,9 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { nanoid } from 'nanoid';
 import { parseTask, serializeTask } from './parser';
-import { Task, TaskFilters, CreateTaskInput, UpdateTaskInput } from '../types/task';
+import { Task, TaskFilters, CreateTaskInput, UpdateTaskInput } from '@nexkan/shared';
 import { startOfDay, isBefore, isEqual, addDays, format } from 'date-fns';
-import { parseLocalDate } from '../lib/date';
+import { parseLocalDate } from '@nexkan/shared';
 
 function getDataDir(): string {
   return process.env.DATA_DIR || path.join(process.cwd(), 'data', 'tasks');

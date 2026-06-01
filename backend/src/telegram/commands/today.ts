@@ -1,5 +1,5 @@
 import { readAll } from '../../tasks/store';
-import { Task } from '../../types/task';
+import { Task } from '@nexkan/shared';
 import { escapeMd } from '../utils';
 
 function formatTask(t: Task): string {

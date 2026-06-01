@@ -1,5 +1,5 @@
 import { readById, updateStatus } from '../../tasks/store';
-import { TaskStatus } from '../../types/task';
+import { TaskStatus } from '@nexkan/shared';
 
 const VALID_STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done'];
 

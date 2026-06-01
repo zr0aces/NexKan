@@ -4,4 +4,8 @@ module.exports = {
   roots: ['<rootDir>/tests'],
   testMatch: ['**/*.test.ts'],
   testTimeout: 10000,
+  moduleNameMapper: {
+    '^@nexkan/shared$': '<rootDir>/../shared/src/index.ts',
+    '^@nexkan/shared/(.*)$': '<rootDir>/../shared/src/$1',
+  },
 };

@@ -13,7 +13,7 @@ import { handleOverdue } from '../../src/telegram/commands/overdue';
 import { handleHelp } from '../../src/telegram/commands/help';
 import { handleMove } from '../../src/telegram/commands/move';
 import { handleTask } from '../../src/telegram/commands/task';
-import { Task } from '../../src/types/task';
+import { Task } from '@nexkan/shared';
 
 function makeCtx(text: string = ''): any {
   return {

@@ -1,5 +1,5 @@
 import matter from 'gray-matter';
-import { Task } from '../types/task';
+import { Task } from '@nexkan/shared';
 
 export function parseTask(content: string, filename: string): Task {
   const { data, content: body } = matter(content);

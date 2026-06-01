@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { readAll, readById, NotFoundError, create, update, updateStatus, updateOrder, deleteTask } from './store';
-import { TaskFilters } from '../types/task';
+import { TaskFilters } from '@nexkan/shared';
 
 const CreateTaskSchema = z.object({
   title: z.string().min(1),

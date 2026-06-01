@@ -17,7 +17,7 @@ jest.mock('../../src/telegram/bot', () => ({
 import { readAll } from '../../src/tasks/store';
 import { getBot } from '../../src/telegram/bot';
 import { checkAndNotify } from '../../src/telegram/notifier';
-import { Task } from '../../src/types/task';
+import { Task } from '@nexkan/shared';
 
 let tmpFile: string;
 

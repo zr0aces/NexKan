@@ -5,7 +5,7 @@ jest.mock('../../src/tasks/store', () => ({
 
 import { updateStatus, readById } from '../../src/tasks/store';
 import { handleCallback } from '../../src/telegram/callbacks';
-import { Task } from '../../src/types/task';
+import { Task } from '@nexkan/shared';
 import { InlineKeyboard } from 'grammy';
 
 function makeTask(overrides: Partial<Task> = {}): Task {

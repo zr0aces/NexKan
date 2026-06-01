@@ -1,7 +1,6 @@
 import { readAll } from '../../tasks/store';
-import { Task } from '../../types/task';
+import { Task, formatDate } from '@nexkan/shared';
 import { escapeMd } from '../utils';
-import { formatDate } from '../../lib/date';
 
 function formatTask(t: Task): string {
   const due = t.due_date ? ` · Due: ${formatDate(t.due_date)}` : '';

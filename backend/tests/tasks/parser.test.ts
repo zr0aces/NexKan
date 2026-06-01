@@ -1,5 +1,5 @@
 import { parseTask, serializeTask } from '../../src/tasks/parser';
-import { Task } from '../../src/types/task';
+import { Task } from '@nexkan/shared';
 
 const SAMPLE_MD = `---
 id: a3f9k2mw

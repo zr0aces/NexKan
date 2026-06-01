@@ -1,7 +1,7 @@
 import { readById } from '../../tasks/store';
 import { InlineKeyboard } from 'grammy';
 import { escapeMd } from '../utils';
-import { formatDate } from '../../lib/date';
+import { formatDate } from '@nexkan/shared';
 
 export async function handleTask(ctx: any): Promise<void> {
   try {
