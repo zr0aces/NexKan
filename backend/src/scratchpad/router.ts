@@ -61,6 +61,7 @@ noteRouter.post('/:id/convert', async (req: Request, res: Response) => {
 
     const lines = note.content.split('\n');
     const title = lines[0].trim();
+    if (!title) return void res.status(400).json({ error: 'Note first line must be non-empty to use as task title' });
     const description = lines.slice(1).join('\n').trim() || undefined;
 
     const task = await createTask({
