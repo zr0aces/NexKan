@@ -21,7 +21,7 @@ services:
     pull_policy: always
     volumes:
       - frontend-dist:/usr/share/nginx/html
-    command: ["cp", "-r", "/usr/share/nginx/html/.", "/usr/share/nginx/html"]
+    command: ["cp", "-r", "/app/dist/.", "/usr/share/nginx/html"]
     restart: "no"
 
   nginx:

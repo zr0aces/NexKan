@@ -28,5 +28,5 @@ RUN cd frontend && npm run build
 
 # Runtime stage — static files only, served by the nginx service at runtime
 FROM busybox:stable-musl
-WORKDIR /usr/share/nginx/html
+WORKDIR /app/dist
 COPY --from=builder /app/frontend/dist ./
