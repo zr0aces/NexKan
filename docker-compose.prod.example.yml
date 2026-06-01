@@ -1,0 +1,42 @@
+volumes:
+  frontend-dist:
+
+services:
+  backend:
+    container_name: nexkan-backend
+    image: ghcr.io/${GHCR_OWNER}/nexkan-backend:${NEXKAN_TAG:-latest}
+    pull_policy: always
+    expose:
+      - "3000"
+    volumes:
+      - ./data/tasks:/app/data/tasks
+      - ./data/notifications-sent.json:/app/data/notifications-sent.json
+    env_file: .env
+    restart: unless-stopped
+
+  # Copies pre-built frontend dist into the shared volume, then exits.
+  frontend:
+    container_name: nexkan-frontend
+    image: ghcr.io/${GHCR_OWNER}/nexkan-frontend:${NEXKAN_TAG:-latest}
+    pull_policy: always
+    volumes:
+      - frontend-dist:/usr/share/nginx/html
+    command: ["cp", "-r", "/usr/share/nginx/html/.", "/usr/share/nginx/html"]
+    restart: "no"
+
+  nginx:
+    container_name: nexkan-nginx
+    image: nginx:alpine
+    pull_policy: always
+    ports:
+      - "${HOST_PORT:-8092}:80"
+    volumes:
+      - ./nginx/nexkan.conf:/etc/nginx/conf.d/default.conf:ro
+      - frontend-dist:/usr/share/nginx/html:ro
+      - ./data/.htpasswd:/etc/nginx/.htpasswd:ro
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
+      backend:
+        condition: service_started
+    restart: unless-stopped

@@ -187,6 +187,40 @@ User credentials in `data/.htpasswd` persist across updates — no re-creation n
 
 ---
 
+## Deploy from GHCR images (no local build)
+
+Use the production example compose file if you publish both images to GHCR:
+
+```bash
+cp docker-compose.prod.example.yml docker-compose.prod.yml
+```
+
+Set these variables in your `.env` (or export in shell):
+
+```bash
+GHCR_OWNER=<github-org-or-user>
+NEXKAN_TAG=v2026.6.1
+HOST_PORT=8092
+```
+
+Authenticate to GHCR (required for private packages):
+
+```bash
+echo <github_token> | docker login ghcr.io -u <github_user> --password-stdin
+```
+
+Start with the GHCR-based compose file:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+This pulls both images:
+- `ghcr.io/${GHCR_OWNER}/nexkan-backend:${NEXKAN_TAG}`
+- `ghcr.io/${GHCR_OWNER}/nexkan-frontend:${NEXKAN_TAG}`
+
+---
+
 ## Backup
 
 The `data/` directory is the source of truth. Back up both task files and credentials.
