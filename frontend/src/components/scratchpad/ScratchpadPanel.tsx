@@ -58,7 +58,7 @@ export function ScratchpadPanel() {
         <p className="text-sm text-muted-foreground">No notes yet.</p>
       )}
 
-      {notes.length > 0 && (
+      {!isLoading && notes.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-2">
           {notes.map(note => (
             <NoteCard
