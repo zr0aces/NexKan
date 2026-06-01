@@ -8,6 +8,7 @@ import { FilterBar } from '@/components/shared/FilterBar';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Task, TaskFilters, TaskStatus } from '@nexkan/shared';
+import { ScratchpadPanel } from '@/components/scratchpad/ScratchpadPanel';
 
 export default function BoardPage() {
   const [filters, setFilters] = useState<TaskFilters>({ sort: 'sort_order:asc' });
@@ -77,6 +78,8 @@ export default function BoardPage() {
             onAddClick={handleAddClick}
           />
         )}
+
+        <ScratchpadPanel />
       </main>
 
       <TaskDialog

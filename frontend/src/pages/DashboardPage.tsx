@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { AlertTriangle, Clock, CheckSquare, List } from 'lucide-react';
 import { startOfDay, isEqual, addDays } from 'date-fns';
 import { parseLocalDate, formatDate, isOverdue } from '@nexkan/shared';
+import { ScratchpadPanel } from '@/components/scratchpad/ScratchpadPanel';
 
 export default function DashboardPage() {
   const { data: tasks = [], isLoading } = useTasks();
@@ -66,6 +67,8 @@ export default function DashboardPage() {
             </div>
           </>
         )}
+
+        <ScratchpadPanel />
       </main>
     </div>
   );
