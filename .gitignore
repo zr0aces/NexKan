@@ -24,3 +24,4 @@ AGENT.md
 .brainsync/
 cache/
 graphify-out/
+shared/dist/
