@@ -7,7 +7,11 @@ export async function handleHelp(ctx: any): Promise<void> {
       `/today — Tasks due today\n` +
       `/overdue — Overdue tasks\n` +
       `/task <id> — Task detail + actions\n` +
-      `/move <id> <status> — Move task (todo|in-progress|done)`
+      `/move <id> <status> — Move task (todo|in-progress|done)\n\n` +
+      `Scratchpad:\n` +
+      `/note <text> — Save a quick note\n` +
+      `/notes — List all notes\n` +
+      `/delnote <id> — Delete a note by id`
     );
   } catch {
     await ctx.reply('Something went wrong. Try again.');

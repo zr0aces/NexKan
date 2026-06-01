@@ -9,6 +9,9 @@ import { handleOverdue } from './commands/overdue';
 import { handleTask } from './commands/task';
 import { handleMove } from './commands/move';
 import { handleHelp } from './commands/help';
+import { handleNote } from './commands/note';
+import { handleNotes } from './commands/notes';
+import { handleDelnote } from './commands/delnote';
 import { handleCallback } from './callbacks';
 import { webhookCallback } from 'grammy';
 
@@ -63,5 +66,8 @@ export function setupBotCommands(): void {
   bot.command('task', handleTask);
   bot.command('move', handleMove);
   bot.command('help', handleHelp);
+  bot.command('note', handleNote);
+  bot.command('notes', handleNotes);
+  bot.command('delnote', handleDelnote);
   bot.on('callback_query:data', handleCallback);
 }
