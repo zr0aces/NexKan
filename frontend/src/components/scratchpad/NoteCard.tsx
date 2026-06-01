@@ -26,7 +26,7 @@ export function NoteCard({ note, onUpdate, onDelete, onConvert }: NoteCardProps)
   function handleBlur() {
     setEditing(false);
     const trimmed = draft.trim();
-    if (trimmed && trimmed !== note.content) {
+    if (trimmed && trimmed !== note.content.trim()) {
       onUpdate(note.id, trimmed);
     }
   }
