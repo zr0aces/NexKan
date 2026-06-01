@@ -1,4 +1,4 @@
-import { Task, CreateTaskInput, UpdateTaskInput, TaskFilters } from '@nexkan/shared';
+import { Task, CreateTaskInput, UpdateTaskInput, TaskFilters, Note, TaskPriority, TaskStatus } from '@nexkan/shared';
 
 const BASE = import.meta.env.VITE_API_URL ?? '/api';
 
@@ -24,10 +24,6 @@ export const api = {
       });
       const qs = params.toString();
       return request<Task[]>(`/tasks${qs ? `?${qs}` : ''}`);
-    },
-
-    get(id: string): Promise<Task> {
-      return request<Task>(`/tasks/${id}`);
     },
 
     create(input: CreateTaskInput): Promise<Task> {
@@ -60,6 +56,40 @@ export const api = {
 
     delete(id: string): Promise<void> {
       return request<void>(`/tasks/${id}`, { method: 'DELETE' });
+    },
+  },
+
+  notes: {
+    list(): Promise<Note[]> {
+      return request<Note[]>('/notes');
+    },
+
+    create(content: string): Promise<Note> {
+      return request<Note>('/notes', {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      });
+    },
+
+    update(id: string, content: string): Promise<Note> {
+      return request<Note>(`/notes/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content }),
+      });
+    },
+
+    delete(id: string): Promise<void> {
+      return request<void>(`/notes/${id}`, { method: 'DELETE' });
+    },
+
+    convert(
+      id: string,
+      opts: { due_date?: string; priority?: TaskPriority; status?: TaskStatus }
+    ): Promise<Task> {
+      return request<Task>(`/notes/${id}/convert`, {
+        method: 'POST',
+        body: JSON.stringify(opts),
+      });
     },
   },
 };
