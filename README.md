@@ -26,7 +26,7 @@ Personal Kanban board. Markdown files as storage. Telegram bot for remote access
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Node.js 20, Express 4, TypeScript |
+| Backend | Node.js 24, Express 4, TypeScript |
 | Storage | Markdown + YAML frontmatter via gray-matter |
 | Telegram | grammy, chrono-node |
 | Frontend | React 18, Vite 5, TanStack Query, dnd-kit |
