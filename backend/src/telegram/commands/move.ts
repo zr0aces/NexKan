@@ -1,7 +1,9 @@
 import { readById, updateStatus } from '../../tasks/store';
 import { TaskStatus, TASK_STATUSES, requiresDueDate } from '@nexkan/shared';
+import { isAuthorizedChat } from '../utils';
 
 export async function handleMove(ctx: any): Promise<void> {
+  if (!isAuthorizedChat(ctx)) return;
   try {
     const args: string = ctx.match?.trim() ?? '';
     const parts = args.split(/\s+/);

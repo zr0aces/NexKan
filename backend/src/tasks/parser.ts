@@ -4,6 +4,14 @@ import { Task } from '@nexkan/shared';
 export function parseTask(content: string, filename: string): Task {
   const { data, content: body } = matter(content);
 
+  const REQUIRED_FIELDS = ['id', 'title', 'status'] as const;
+  const missing = REQUIRED_FIELDS.filter(f => !data[f]);
+  if (missing.length > 0) {
+    throw new Error(
+      `Corrupted task file ${filename}: missing required field(s) – ${missing.join(', ')}`
+    );
+  }
+
   return {
     id: data.id,
     title: data.title,

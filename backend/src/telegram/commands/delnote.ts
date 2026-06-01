@@ -1,6 +1,8 @@
 import { deleteNote, NotFoundError } from '../../scratchpad/store';
+import { isAuthorizedChat } from '../utils';
 
 export async function handleDelnote(ctx: any): Promise<void> {
+  if (!isAuthorizedChat(ctx)) return;
   const id: string = ctx.match?.trim() ?? '';
   if (!id) {
     await ctx.reply('Usage: /delnote <id>\nExample: /delnote abc12345');

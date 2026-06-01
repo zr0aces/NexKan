@@ -1,6 +1,8 @@
 import { create } from '../../scratchpad/store';
+import { isAuthorizedChat } from '../utils';
 
 export async function handleNote(ctx: any): Promise<void> {
+  if (!isAuthorizedChat(ctx)) return;
   const text: string = ctx.match?.trim() ?? '';
   if (!text) {
     await ctx.reply('Usage: /note <text>\nExample: /note Call dentist Monday');

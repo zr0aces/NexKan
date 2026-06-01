@@ -262,7 +262,9 @@ export async function updateOrder(id: string, position: number): Promise<Task> {
     throw err;
   }
 
-  return (await readById(id))!;
+  const updated = await readById(id);
+  if (!updated) throw new NotFoundError(id);
+  return updated;
 }
 
 export async function deleteTask(id: string): Promise<void> {

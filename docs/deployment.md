@@ -50,9 +50,13 @@ CRON_SECRET=<64-char-hex>
 ### 3. Initialize data directories
 
 ```bash
-mkdir -p data/tasks
+mkdir -p data/tasks data/scratchpad
 echo '{}' > data/notifications-sent.json
 ```
+
+> **Note:** `data/notifications-sent.json` must exist as a **file** before running
+> `docker compose up`, because Docker bind-mounts an existing path as-is. If the
+> file is absent Docker creates it as a directory, which breaks the backend.
 
 ### 4. Create the first user
 

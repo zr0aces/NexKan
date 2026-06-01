@@ -1,17 +1,31 @@
 import { updateStatus, readById } from '../tasks/store';
 import { InlineKeyboard } from 'grammy';
-import { escapeMd } from './utils';
-import { formatDate } from '@nexkan/shared';
+import type { Context } from 'grammy';
+import { escapeMd, isAuthorizedChat } from './utils';
+import { formatDate, TASK_STATUSES, TaskStatus } from '@nexkan/shared';
 
-export async function handleCallback(ctx: any): Promise<void> {
+export async function handleCallback(ctx: Context): Promise<void> {
+  if (!isAuthorizedChat(ctx)) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
   const data: string = ctx.callbackQuery?.data ?? '';
 
   if (data.startsWith('move:')) {
     const parts = data.split(':');
+    if (parts.length < 3 || !parts[1] || !parts[2]) {
+      await ctx.answerCallbackQuery({ text: 'Invalid callback data.' });
+      return;
+    }
     const taskId = parts[1];
     const newStatus = parts[2];
+    if (!TASK_STATUSES.includes(newStatus as TaskStatus)) {
+      await ctx.answerCallbackQuery({ text: 'Invalid status.' });
+      return;
+    }
     try {
-      await updateStatus(taskId, newStatus, undefined);
+      await updateStatus(taskId, newStatus as TaskStatus, undefined);
       await ctx.answerCallbackQuery({ text: `✅ Moved to ${newStatus}` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error';
