@@ -1,3 +1,6 @@
+volumes:
+  frontend-dist:
+
 services:
   backend:
     container_name: nexkan-backend
@@ -12,15 +15,28 @@ services:
     env_file: .env
     restart: unless-stopped
 
+  frontend:
+    container_name: nexkan-frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    volumes:
+      - frontend-dist:/usr/share/nginx/html
+    command: ["cp", "-r", "/usr/share/nginx/html/.", "/usr/share/nginx/html"]
+    restart: "no"
+
   nginx:
     container_name: nexkan-nginx
     image: nginx:alpine
     ports:
-      - "${HOST_PORT:-8092}:80" # Map Host port from .env to container port 80
+      - "${HOST_PORT:-8092}:80"
     volumes:
       - ./nginx/nexkan.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./frontend/dist:/usr/share/nginx/html:ro
+      - frontend-dist:/usr/share/nginx/html:ro
       - ./data/.htpasswd:/etc/nginx/.htpasswd:ro
     depends_on:
-      - backend
+      frontend:
+        condition: service_completed_successfully
+      backend:
+        condition: service_started
     restart: unless-stopped
