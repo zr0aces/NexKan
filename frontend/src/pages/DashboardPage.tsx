@@ -30,9 +30,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="border-b bg-background">
+        <div className="max-w-screen-xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-4">
             <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground hover:opacity-90 transition-opacity">
               <Logo className="h-6 w-6 text-foreground" />
               <div className="flex items-baseline gap-1.5">
@@ -42,12 +42,23 @@ export default function DashboardPage() {
                 </span>
               </div>
             </Link>
-            <nav className="flex gap-2 ml-2">
+            
+            <nav className="hidden sm:flex gap-2 ml-2">
               <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Board</Link>
               <Link to="/dashboard" className="text-sm font-medium text-foreground">Dashboard</Link>
             </nav>
           </div>
-          <ThemeToggle />
+          
+          <div className="flex items-center justify-between sm:justify-end gap-2">
+            <nav className="flex sm:hidden gap-4">
+              <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Board</Link>
+              <Link to="/dashboard" className="text-sm font-medium text-foreground">Dashboard</Link>
+            </nav>
+            
+            <div className="ml-auto sm:ml-0">
+              <ThemeToggle />
+            </div>
+          </div>
         </div>
       </header>
 
