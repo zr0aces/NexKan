@@ -80,24 +80,8 @@ NexKan features a unified, minimalist flat-UI design layout centered around a te
 
 ---
 
-## Versioning & Releases
-
-NexKan uses Calendar Versioning (**CalVer**) with the scheme `YYYY.M.PATCH`:
-- `YYYY` — Year
-- `M` — Month (1-12)
-- `PATCH` — Minor patch/fix incrementer, which resets to `1` when the calendar month or year transitions (e.g. `2026.5.4` → `2026.6.1` → `2026.6.2`).
-
-### Storing and Syncing Versions
-- The single source of truth is the root `package.json`'s version.
-- Running `node scripts/sync-version.js [VERSION]` syncs the root version to all package workspaces (`backend/package.json`, `frontend/package.json`, `shared/package.json`), updates `package-lock.json`, writes the version dynamically to a shared typescript module ([version.ts](shared/src/lib/version.ts)), and compiles the shared package automatically.
-- If no version argument is specified, `sync-version.js` automatically calculates the next version based on today's calendar date and the current package version.
-
-### Preparing a Release
-- Run `node scripts/release.js [VERSION]` to automatically sync versions, build workspace modules, and output branch-aware git commands to commit, tag, and push the release.
-
----
-
 ## Documentation
 
 - [Deployment guide](docs/deployment.md) — Setup, HTTPS, cron, updates, troubleshooting
 - [API reference](docs/api.md) — All REST endpoints, query params, request/response shapes
+- [Versioning & releases guide](docs/versioning.md) — CalVer scheme, syncing, release script
