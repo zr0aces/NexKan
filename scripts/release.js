@@ -12,8 +12,8 @@ Usage:
   node ./scripts/release.js [VERSION]
 
 Arguments:
-  VERSION   CalVer in YYYY.M.D or vYYYY.M.D format.
-            If omitted, defaults to today's date.
+  VERSION   CalVer in YYYY.M.PATCH or vYYYY.M.PATCH format.
+            If omitted, auto-increments the patch version for the current month.
 
 Examples:
   node ./scripts/release.js
@@ -60,7 +60,7 @@ try {
 
   process.stdout.write(`\nRelease version prepared: ${version}\n\n`);
   process.stdout.write('Run these commands after reviewing changes:\n');
-  process.stdout.write('  git add package.json package-lock.json backend/package.json frontend/package.json shared/package.json\n');
+  process.stdout.write('  git add package.json package-lock.json backend/package.json frontend/package.json shared/package.json shared/src/lib/version.ts\n');
   process.stdout.write(`  git commit -m "chore(release): ${tag}"\n`);
   process.stdout.write(`  git tag -a "${tag}" -m "Release ${tag}"\n`);
   process.stdout.write('  git push origin <branch>\n');

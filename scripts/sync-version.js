@@ -12,8 +12,8 @@ Usage:
   node ./scripts/sync-version.js [VERSION]
 
 Arguments:
-  VERSION   CalVer in YYYY.M.D or vYYYY.M.D format.
-            If omitted, defaults to today's date.
+  VERSION   CalVer in YYYY.M.PATCH or vYYYY.M.PATCH format.
+            If omitted, auto-increments the patch version for the current month.
 
 Examples:
   node ./scripts/sync-version.js
@@ -25,11 +25,6 @@ Notes:
   - This script updates root + backend + frontend + shared versions.
   - package-lock.json is refreshed to keep version metadata in sync.
 `);
-}
-
-function todayCalVer() {
-  const now = new Date();
-  return `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}`;
 }
 
 function runNpm(args) {
@@ -49,20 +44,55 @@ function getRootVersion() {
   return out.trim().replace(/^"|"$/g, '');
 }
 
+function getNextCalVer(currentVersion) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  try {
+    const parts = currentVersion.split('.').map(Number);
+    if (parts.length < 3 || parts.some(isNaN)) {
+      return `${currentYear}.${currentMonth}.1`;
+    }
+    const prevYear = parts[0];
+    const prevMonth = parts[1];
+    const prevPatch = parts[2];
+
+    // If the year or month has changed, reset patch/minor-fix to 1
+    if (currentYear > prevYear || (currentYear === prevYear && currentMonth > prevMonth)) {
+      return `${currentYear}.${currentMonth}.1`;
+    }
+
+    // Otherwise, increment the patch/minor-fix number by 1
+    return `${prevYear}.${prevMonth}.${prevPatch + 1}`;
+  } catch (e) {
+    return `${currentYear}.${currentMonth}.1`;
+  }
+}
+
 const arg = process.argv[2];
 if (arg === '-h' || arg === '--help') {
   usage();
   process.exit(0);
 }
 
-const rawVersion = arg || todayCalVer();
-const version = rawVersion.replace(/^v/, '');
-
-if (!/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(version)) {
-  process.stderr.write(`Invalid CalVer: ${rawVersion}\n`);
-  process.stderr.write('Expected: YYYY.M.D or vYYYY.M.D\n\n');
-  usage();
-  process.exit(1);
+let version;
+if (arg) {
+  version = arg.replace(/^v/, '');
+  if (!/^\d{4}\.\d{1,2}\.\d+$/.test(version)) {
+    process.stderr.write(`Invalid CalVer: ${arg}\n`);
+    process.stderr.write('Expected: YYYY.M.PATCH or vYYYY.M.PATCH\n\n');
+    usage();
+    process.exit(1);
+  }
+} else {
+  try {
+    const currentVersion = getRootVersion();
+    version = getNextCalVer(currentVersion);
+  } catch (error) {
+    const now = new Date();
+    version = `${now.getFullYear()}.${now.getMonth() + 1}.1`;
+  }
 }
 
 try {
