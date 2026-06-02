@@ -16,11 +16,16 @@ interface MobileColumnNavProps {
 }
 
 export function MobileColumnNav({ activeStatus, onStatusChange, tasks }: MobileColumnNavProps) {
+  const counts = tasks.reduce<Record<TaskStatus, number>>(
+    (acc, t) => { acc[t.status] = (acc[t.status] ?? 0) + 1; return acc; },
+    { todo: 0, 'in-progress': 0, done: 0 }
+  );
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden">
       <div role="tablist" className="flex">
         {COLUMNS.map(({ status, label, Icon }) => {
-          const count = tasks.filter(t => t.status === status).length;
+          const count = counts[status];
           const isActive = status === activeStatus;
           return (
             <button

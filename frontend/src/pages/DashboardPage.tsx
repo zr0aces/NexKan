@@ -5,6 +5,7 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DeadlineList } from '@/components/dashboard/DeadlineList';
 import { OverdueList } from '@/components/dashboard/OverdueList';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { Logo } from '@/components/shared/Logo';
 import { AlertTriangle, Clock, CheckSquare, List } from 'lucide-react';
 import { startOfDay, isEqual, addDays } from 'date-fns';
 import { parseLocalDate, formatDate, isOverdue } from '@nexkan/shared';
@@ -32,8 +33,11 @@ export default function DashboardPage() {
       <header className="border-b">
         <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">NexKan</h1>
-            <nav className="flex gap-2">
+            <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground hover:opacity-90 transition-opacity">
+              <Logo className="h-6 w-6 text-foreground" />
+              <span>NexKan</span>
+            </Link>
+            <nav className="flex gap-2 ml-2">
               <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Board</Link>
               <Link to="/dashboard" className="text-sm font-medium text-foreground">Dashboard</Link>
             </nav>

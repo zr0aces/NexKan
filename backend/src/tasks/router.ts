@@ -69,6 +69,9 @@ taskRouter.post('/', async (req: Request, res: Response) => {
     const task = await create(parsed.data);
     res.status(201).json(task);
   } catch (err) {
+    if (err instanceof Error && err.message.includes('due_date')) {
+      return void res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 });

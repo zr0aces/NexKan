@@ -6,6 +6,7 @@ import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { TaskDialog } from '@/components/task/TaskDialog';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
 import { Task, TaskFilters, TaskStatus } from '@nexkan/shared';
 import { ScratchpadPanel } from '@/components/scratchpad/ScratchpadPanel';
@@ -39,8 +40,11 @@ export default function BoardPage() {
       <header className="border-b">
         <div className="max-w-screen-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">NexKan</h1>
-            <nav className="flex gap-2">
+            <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground hover:opacity-90 transition-opacity">
+              <Logo className="h-6 w-6 text-foreground" />
+              <span>NexKan</span>
+            </Link>
+            <nav className="flex gap-2 ml-2">
               <Link to="/" className="text-sm font-medium text-foreground">Board</Link>
               <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">Dashboard</Link>
             </nav>

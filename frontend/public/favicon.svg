@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <style>
+    .frame {
+      stroke: #334155; /* Slate 700 for light mode */
+    }
+    @media (prefers-color-scheme: dark) {
+      .frame {
+        stroke: #cbd5e1; /* Slate 300 for dark mode */
+      }
+    }
+  </style>
+  <rect x="20" y="22" width="65" height="56" rx="6" class="frame" stroke-width="6" />
+  <rect x="12" y="33" width="48" height="34" rx="4" fill="#f97316" />
+</svg>

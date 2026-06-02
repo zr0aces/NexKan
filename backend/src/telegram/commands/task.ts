@@ -1,6 +1,5 @@
 import { readById } from '../../tasks/store';
-import { InlineKeyboard } from 'grammy';
-import { escapeMd, isAuthorizedChat } from '../utils';
+import { escapeMd, isAuthorizedChat, buildTaskKeyboard } from '../utils';
 import { formatDate } from '@nexkan/shared';
 
 export async function handleTask(ctx: any): Promise<void> {
@@ -27,11 +26,7 @@ export async function handleTask(ctx: any): Promise<void> {
       task.description ? `\n${task.description}` : '',
     ].filter(Boolean);
 
-    const keyboard = new InlineKeyboard()
-      .text('▶ Start', `move:${task.id}:in-progress`)
-      .text('✅ Complete', `move:${task.id}:done`)
-      .row()
-      .text('📌 Todo', `move:${task.id}:todo`);
+    const keyboard = buildTaskKeyboard(task.id);
 
     await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown', reply_markup: keyboard });
   } catch {

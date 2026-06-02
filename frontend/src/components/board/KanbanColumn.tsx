@@ -21,11 +21,12 @@ const COLUMN_LABELS: Record<TaskStatus, string> = {
 interface KanbanColumnProps {
   status: TaskStatus;
   tasks: Task[];
+  today: Date;
   onTaskClick: (task: Task) => void;
   onAddClick: (status: TaskStatus) => void;
 }
 
-export function KanbanColumn({ status, tasks, onTaskClick, onAddClick }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, today, onTaskClick, onAddClick }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
@@ -57,7 +58,7 @@ export function KanbanColumn({ status, tasks, onTaskClick, onAddClick }: KanbanC
       <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-2 flex-1">
           {tasks.map(task => (
-            <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
+            <TaskCard key={task.id} task={task} today={today} onClick={() => onTaskClick(task)} />
           ))}
         </div>
       </SortableContext>

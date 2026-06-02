@@ -53,8 +53,13 @@ export function serializeTask(task: Task): string {
   return matter.stringify(body, frontmatter);
 }
 
+const SECTION_PATTERNS: Record<string, RegExp> = {
+  Description: /##\s+Description\s*\n([\s\S]*?)(?=\n##\s|$)/,
+  Notes:       /##\s+Notes\s*\n([\s\S]*?)(?=\n##\s|$)/,
+};
+
 function extractSection(body: string, heading: string): string {
-  const pattern = new RegExp(`##\\s+${heading}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`);
+  const pattern = SECTION_PATTERNS[heading] ?? new RegExp(`##\\s+${heading}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`);
   const match = body.match(pattern);
   return match ? match[1].trim() : '';
 }

@@ -9,10 +9,11 @@ import { cn } from '@/lib/utils';
 
 interface TaskCardProps {
   task: Task;
+  today: Date;
   onClick?: () => void;
 }
 
-export function TaskCard({ task, onClick }: TaskCardProps) {
+export function TaskCard({ task, today, onClick }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { task },
@@ -24,7 +25,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const overdue = task.due_date ? isOverdue(task.due_date, task.status) : false;
+  const overdue = task.due_date ? isOverdue(task.due_date, task.status, today) : false;
 
   return (
     <div

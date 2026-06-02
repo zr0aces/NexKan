@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { readAll } from '../tasks/store';
 import { getBot } from './bot';
+import { buildTaskKeyboard } from './utils';
 import { startOfDay, isBefore, isEqual, addDays, format } from 'date-fns';
-import { InlineKeyboard } from 'grammy';
 import { parseLocalDate, formatDate } from '@nexkan/shared';
 
 function getNotificationsFile(): string {
@@ -41,52 +41,65 @@ export async function checkAndNotify(): Promise<void> {
   const tomorrow = addDays(today, 1);
   const bot = getBot();
 
-  try {
-    for (const task of tasks) {
-      if (task.status === 'done' || !task.due_date) continue;
+  type Pending = { key: string; send: () => Promise<void> };
+  const pending: Pending[] = [];
 
-      const dueDate = startOfDay(parseLocalDate(task.due_date));
-      const keyboard = new InlineKeyboard().text('View Task', `view:${task.id}`);
+  for (const task of tasks) {
+    if (task.status === 'done' || !task.due_date) continue;
 
-      if (isBefore(dueDate, today)) {
-        const key = `${task.id}:overdue:${todayStr()}`;
-        if (!sent[key]) {
-          await bot.api.sendMessage(
-            chatId,
-            `⚠️ Overdue: ${task.title} (${task.id})\nDue: ${formatDate(task.due_date)} · Status: ${task.status}`,
-            { reply_markup: keyboard }
-          );
-          sent[key] = true;
-        }
-        continue;
+    const dueDate = startOfDay(parseLocalDate(task.due_date));
+    const keyboard = buildTaskKeyboard(task.id);
+
+    if (isBefore(dueDate, today)) {
+      const key = `${task.id}:overdue:${todayStr()}`;
+      if (!sent[key]) {
+        pending.push({ key, send: () => bot.api.sendMessage(
+          chatId,
+          `⚠️ Overdue: ${task.title} (${task.id})\nDue: ${formatDate(task.due_date!)} · Status: ${task.status}`,
+          { reply_markup: keyboard }
+        ).then(() => {}) });
       }
+      continue;
+    }
 
-      if (isEqual(dueDate, today)) {
-        const key = `${task.id}:due-today:${task.due_date}`;
-        if (!sent[key]) {
-          await bot.api.sendMessage(
-            chatId,
-            `🔔 Due today: ${task.title} (${task.id})\nStatus: ${task.status}`,
-            { reply_markup: keyboard }
-          );
-          sent[key] = true;
-        }
-        continue;
+    if (isEqual(dueDate, today)) {
+      const key = `${task.id}:due-today:${task.due_date}`;
+      if (!sent[key]) {
+        pending.push({ key, send: () => bot.api.sendMessage(
+          chatId,
+          `🔔 Due today: ${task.title} (${task.id})\nStatus: ${task.status}`,
+          { reply_markup: keyboard }
+        ).then(() => {}) });
       }
+      continue;
+    }
 
-      if (isEqual(dueDate, tomorrow)) {
-        const key = `${task.id}:due-tomorrow:${task.due_date}`;
-        if (!sent[key]) {
-          await bot.api.sendMessage(
-            chatId,
-            `📅 Due tomorrow: ${task.title} (${task.id})\nStatus: ${task.status}`,
-            { reply_markup: keyboard }
-          );
-          sent[key] = true;
-        }
+    if (isEqual(dueDate, tomorrow)) {
+      const key = `${task.id}:due-tomorrow:${task.due_date}`;
+      if (!sent[key]) {
+        pending.push({ key, send: () => bot.api.sendMessage(
+          chatId,
+          `📅 Due tomorrow: ${task.title} (${task.id})\nStatus: ${task.status}`,
+          { reply_markup: keyboard }
+        ).then(() => {}) });
       }
     }
-  } finally {
+  }
+
+  if (pending.length === 0) return;
+
+  const results = await Promise.allSettled(pending.map(p => p.send()));
+  let dirty = false;
+  results.forEach((result, i) => {
+    if (result.status === 'fulfilled') {
+      sent[pending[i].key] = true;
+      dirty = true;
+    } else {
+      console.error(`Failed to send notification for key ${pending[i].key}:`, result.reason);
+    }
+  });
+
+  if (dirty) {
     try {
       saveSent(sent);
     } catch (e) {

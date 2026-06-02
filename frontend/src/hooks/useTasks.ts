@@ -9,12 +9,3 @@ export function useTasks(filters: TaskFilters = {}) {
     staleTime: 30_000,
   });
 }
-
-export function useTask(id: string) {
-  return useQuery({
-    queryKey: ['tasks', id],
-    queryFn: () => api.tasks.get(id),
-    enabled: Boolean(id),
-    staleTime: 30_000,
-  });
-}

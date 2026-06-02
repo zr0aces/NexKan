@@ -1,7 +1,6 @@
 import { updateStatus, readById } from '../tasks/store';
-import { InlineKeyboard } from 'grammy';
 import type { Context } from 'grammy';
-import { escapeMd, isAuthorizedChat } from './utils';
+import { escapeMd, isAuthorizedChat, buildTaskKeyboard } from './utils';
 import { formatDate, TASK_STATUSES, TaskStatus } from '@nexkan/shared';
 
 export async function handleCallback(ctx: Context): Promise<void> {
@@ -52,11 +51,7 @@ export async function handleCallback(ctx: Context): Promise<void> {
         task.priority ? `Priority: ${task.priority}` : '',
       ].filter(Boolean);
 
-      const keyboard = new InlineKeyboard()
-        .text('▶ Start', `move:${task.id}:in-progress`)
-        .text('✅ Complete', `move:${task.id}:done`)
-        .row()
-        .text('📌 Todo', `move:${task.id}:todo`);
+      const keyboard = buildTaskKeyboard(task.id);
 
       await ctx.answerCallbackQuery();
       await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown', reply_markup: keyboard });

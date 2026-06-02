@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -10,6 +10,7 @@ import {
   closestCorners,
 } from '@dnd-kit/core';
 import { Task, TaskStatus, TASK_STATUSES } from '@nexkan/shared';
+import { startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { KanbanColumn } from './KanbanColumn';
 import { MobileColumnNav } from './MobileColumnNav';
@@ -32,6 +33,7 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
   const updateStatus = useUpdateTaskStatus();
   const updateOrder = useUpdateTaskOrder();
 
+  const today = useMemo(() => startOfDay(new Date()), []);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   // Sync server state into localTasks, but never during an active drag
@@ -140,6 +142,7 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
             <KanbanColumn
               status={status}
               tasks={getColumnTasks(status)}
+              today={today}
               onTaskClick={onTaskClick}
               onAddClick={onAddClick}
             />

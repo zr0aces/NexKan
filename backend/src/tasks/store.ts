@@ -3,11 +3,9 @@ import * as path from 'path';
 import { nanoid } from 'nanoid';
 import { parseTask, serializeTask } from './parser';
 import { Task, TaskStatus, TaskFilters, CreateTaskInput, UpdateTaskInput, parseLocalDate, requiresDueDate, isOverdue } from '@nexkan/shared';
-import { startOfDay, isEqual, addDays, format } from 'date-fns';
+import { startOfDay, isEqual, addDays } from 'date-fns';
 
-function getDataDir(): string {
-  return process.env.DATA_DIR || path.join(process.cwd(), 'data', 'tasks');
-}
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data', 'tasks');
 
 function toSlug(title: string): string {
   return title
@@ -18,19 +16,50 @@ function toSlug(title: string): string {
     .replace(/-+$/, '');
 }
 
+interface TaskEntry {
+  task: Task;
+  filePath: string;
+}
+
+async function readAllEntries(): Promise<TaskEntry[]> {
+  try {
+    const files = (await fs.promises.readdir(DATA_DIR)).filter(f => f.endsWith('.md'));
+    const entries = await Promise.all(
+      files.map(async filename => {
+        const filePath = path.join(DATA_DIR, filename);
+        try {
+          const content = await fs.promises.readFile(filePath, 'utf-8');
+          return { task: parseTask(content, filename), filePath };
+        } catch {
+          console.error(`Skipping corrupted task file: ${filename}`);
+          return null;
+        }
+      })
+    );
+    return entries.filter((e): e is TaskEntry => e !== null);
+  } catch (err: any) {
+    if (err.code === 'ENOENT') return [];
+    throw err;
+  }
+}
+
 async function readAllFiles(): Promise<Task[]> {
-  const dir = getDataDir();
-  if (!fs.existsSync(dir)) return [];
-  const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'));
-  return files.flatMap(filename => {
-    try {
-      const content = fs.readFileSync(path.join(dir, filename), 'utf-8');
-      return [parseTask(content, filename)];
-    } catch {
-      console.error(`Skipping corrupted task file: ${filename}`);
-      return [];
-    }
-  });
+  return (await readAllEntries()).map(e => e.task);
+}
+
+async function findEntry(id: string): Promise<TaskEntry | null> {
+  try {
+    const files = (await fs.promises.readdir(DATA_DIR)).filter(
+      f => f.startsWith(`${id}-`) && f.endsWith('.md')
+    );
+    if (files.length === 0) return null;
+    const filePath = path.join(DATA_DIR, files[0]);
+    const content = await fs.promises.readFile(filePath, 'utf-8');
+    return { task: parseTask(content, files[0]), filePath };
+  } catch (err: any) {
+    if (err.code === 'ENOENT') return null;
+    throw err;
+  }
 }
 
 function todayDate(): Date {
@@ -105,12 +134,7 @@ export async function readAll(filters: TaskFilters = {}): Promise<Task[]> {
 }
 
 export async function readById(id: string): Promise<Task | null> {
-  const dir = getDataDir();
-  if (!fs.existsSync(dir)) return null;
-  const files = fs.readdirSync(dir).filter(f => f.startsWith(`${id}-`) && f.endsWith('.md'));
-  if (files.length === 0) return null;
-  const content = fs.readFileSync(path.join(dir, files[0]), 'utf-8');
-  return parseTask(content, files[0]);
+  return (await findEntry(id))?.task ?? null;
 }
 
 export class NotFoundError extends Error {
@@ -120,17 +144,8 @@ export class NotFoundError extends Error {
   }
 }
 
-async function findFilePath(id: string): Promise<string> {
-  const dir = getDataDir();
-  if (!fs.existsSync(dir)) throw new NotFoundError(id);
-  const files = fs.readdirSync(dir).filter(f => f.startsWith(`${id}-`) && f.endsWith('.md'));
-  if (files.length === 0) throw new NotFoundError(id);
-  return path.join(dir, files[0]);
-}
-
 export async function create(input: CreateTaskInput): Promise<Task> {
-  const dir = getDataDir();
-  fs.mkdirSync(dir, { recursive: true });
+  await fs.promises.mkdir(DATA_DIR, { recursive: true });
 
   const id = nanoid(8);
   const status = input.status ?? 'todo';
@@ -158,21 +173,17 @@ export async function create(input: CreateTaskInput): Promise<Task> {
     notes: input.notes,
   };
 
-  const slug = toSlug(input.title);
-  const filename = `${id}-${slug}.md`;
-  fs.writeFileSync(path.join(dir, filename), serializeTask(task));
+  const filename = `${id}-${toSlug(input.title)}.md`;
+  await fs.promises.writeFile(path.join(DATA_DIR, filename), serializeTask(task));
   return task;
 }
 
 export async function update(id: string, input: UpdateTaskInput): Promise<Task> {
-  const filePath = await findFilePath(id);
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const task = parseTask(content, path.basename(filePath));
+  const entry = await findEntry(id);
+  if (!entry) throw new NotFoundError(id);
+  const { task, filePath } = entry;
 
-  const updated: Task = {
-    ...task,
-    updated_at: new Date().toISOString(),
-  };
+  const updated: Task = { ...task, updated_at: new Date().toISOString() };
 
   if (input.title !== undefined) updated.title = input.title;
   if (input.description !== undefined) updated.description = input.description;
@@ -187,24 +198,24 @@ export async function update(id: string, input: UpdateTaskInput): Promise<Task> 
     updated.due_date = input.due_date;
   }
 
-  fs.writeFileSync(filePath, serializeTask(updated));
+  await fs.promises.writeFile(filePath, serializeTask(updated));
   return updated;
 }
 
 export async function updateStatus(id: string, status: string, due_date?: string): Promise<Task> {
-  const filePath = await findFilePath(id);
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const task = parseTask(content, path.basename(filePath));
+  const entries = await readAllEntries();
+  const entry = entries.find(e => e.task.id === id);
+  if (!entry) throw new NotFoundError(id);
+  const { task, filePath } = entry;
 
   const effectiveDueDate = due_date ?? task.due_date;
   if (requiresDueDate(status as TaskStatus) && !effectiveDueDate) {
     throw new Error(`due_date is required when moving to ${status}`);
   }
 
-  const allTasks = await readAllFiles();
-  const inTargetColumn = allTasks.filter(t => t.status === status && t.id !== id);
+  const inTargetColumn = entries.filter(e => e.task.status === status && e.task.id !== id);
   const sortOrder = inTargetColumn.length > 0
-    ? Math.max(...inTargetColumn.map(t => t.sort_order)) + 1
+    ? Math.max(...inTargetColumn.map(e => e.task.sort_order)) + 1
     : 1;
 
   const updated: Task = {
@@ -215,50 +226,37 @@ export async function updateStatus(id: string, status: string, due_date?: string
     due_date: due_date ?? task.due_date,
   };
 
-  fs.writeFileSync(filePath, serializeTask(updated));
+  await fs.promises.writeFile(filePath, serializeTask(updated));
   return updated;
 }
 
 export async function updateOrder(id: string, position: number): Promise<Task> {
-  const dir = getDataDir();
-  const task = await readById(id);
-  if (!task) throw new NotFoundError(id);
+  const entries = await readAllEntries();
+  const entry = entries.find(e => e.task.id === id);
+  if (!entry) throw new NotFoundError(id);
 
-  const allTasks = await readAllFiles();
-  const inColumn = allTasks
-    .filter(t => t.status === task.status)
-    .sort((a, b) => a.sort_order - b.sort_order);
+  const inColumn = entries
+    .filter(e => e.task.status === entry.task.status)
+    .sort((a, b) => a.task.sort_order - b.task.sort_order);
 
-  const others = inColumn.filter(t => t.id !== id);
-  others.splice(position, 0, task);
+  const others = inColumn.filter(e => e.task.id !== id);
+  others.splice(position, 0, entry);
 
-  // Single readdirSync to build id→path map — avoids N×readdirSync in the loop
-  const dirFiles = fs.readdirSync(dir);
-  function pathFor(taskId: string): string {
-    const file = dirFiles.find(f => f.startsWith(`${taskId}-`) && f.endsWith('.md'));
-    if (!file) throw new NotFoundError(taskId);
-    return path.join(dir, file);
-  }
-
-  const snapshots: Array<{ path: string; content: string }> = [];
-  for (const t of others) {
-    const fp = pathFor(t.id);
-    snapshots.push({ path: fp, content: fs.readFileSync(fp, 'utf-8') });
-  }
+  // Snapshot original tasks for rollback; derive new sort_order from insertion index
+  const snapshots = others.map((e, i) => ({
+    filePath: e.filePath,
+    original: e.task,
+    updated: { ...e.task, sort_order: i + 1, updated_at: new Date().toISOString() },
+  }));
 
   try {
-    for (let i = 0; i < others.length; i++) {
-      const snap = snapshots[i];
-      const parsed = parseTask(snap.content, path.basename(snap.path));
-      parsed.sort_order = i + 1;
-      parsed.updated_at = new Date().toISOString();
-      fs.writeFileSync(snap.path, serializeTask(parsed));
-    }
+    await Promise.all(
+      snapshots.map(snap => fs.promises.writeFile(snap.filePath, serializeTask(snap.updated)))
+    );
   } catch (err) {
-    // Restore originals
-    for (const snap of snapshots) {
-      try { fs.writeFileSync(snap.path, snap.content); } catch { /* best effort */ }
-    }
+    await Promise.allSettled(
+      snapshots.map(snap => fs.promises.writeFile(snap.filePath, serializeTask(snap.original)))
+    );
     throw err;
   }
 
@@ -268,6 +266,7 @@ export async function updateOrder(id: string, position: number): Promise<Task> {
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  const filePath = await findFilePath(id);
-  fs.unlinkSync(filePath);
+  const entry = await findEntry(id);
+  if (!entry) throw new NotFoundError(id);
+  await fs.promises.unlink(entry.filePath);
 }
