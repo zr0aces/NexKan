@@ -38,40 +38,31 @@ export default function BoardPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background">
-        <div className="max-w-screen-2xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center justify-between sm:justify-start gap-4">
-            <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground hover:opacity-90 transition-opacity">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center hover:opacity-90 transition-opacity" title={`NexKan v${VERSION}`}>
               <Logo className="h-6 w-6 text-foreground" />
-              <div className="flex items-baseline gap-1.5">
-                <span>NexKan</span>
-                <span className="text-[9px] font-mono font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 select-none tracking-wider">
-                  v{VERSION}
-                </span>
-              </div>
+              <span className="hidden sm:inline font-bold text-xl ml-2 select-none">NexKan</span>
+              <span className="hidden sm:inline text-[9px] font-mono font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 select-none tracking-wider ml-1.5">
+                v{VERSION}
+              </span>
             </Link>
             
-            <nav className="hidden sm:flex gap-2 ml-2">
+            <nav className="flex gap-3 ml-1 sm:ml-2">
               <Link to="/" className="text-sm font-medium text-foreground">Board</Link>
               <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">Dashboard</Link>
             </nav>
           </div>
           
-          <div className="flex items-center justify-between sm:justify-end gap-2">
-            <nav className="flex sm:hidden gap-4">
-              <Link to="/" className="text-sm font-medium text-foreground">Board</Link>
-              <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">Dashboard</Link>
-            </nav>
-            
-            <div className="flex items-center gap-2 ml-auto sm:ml-0">
-              <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-8 w-8">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              <ThemeToggle />
-              <Button size="sm" onClick={() => handleAddClick('todo')} className="h-8">
-                <Plus className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">New Task</span>
-              </Button>
-            </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-8 w-8">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <ThemeToggle />
+            <Button size="sm" onClick={() => handleAddClick('todo')} className="h-8">
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">New Task</span>
+            </Button>
           </div>
         </div>
       </header>
