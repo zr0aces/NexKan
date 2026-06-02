@@ -58,11 +58,11 @@ NexKan includes an integrated Telegram bot (built with `grammy`) that serves as 
 NexKan is organized as an **npm monorepo workspace** consisting of three packages:
 - `shared/` (`@nexkan/shared`) — Shared type definitions, domain logic (such as due-date invariants), and local date helpers.
 - `backend/` (`nexkan-backend`) — Node.js 24 / Express 4 API server and Grammy Telegram bot.
-- `frontend/` (`nexkan-frontend`) — React 18 / Vite 5 single-page application.
+- `frontend/` (`nexkan-frontend`) — React 18 / Vite 7 single-page application.
 
 | Component | Technologies Used | Description |
 |-----------|-------------------|-------------|
-| **Frontend** | React 18, Vite 5, TanStack Query v5, dnd-kit | Single Page App with optimistic UI mutations, theme switcher, and drag-and-drop. |
+| **Frontend** | React 18, Vite 7, TanStack Query v5, dnd-kit | Single Page App with optimistic UI mutations, theme switcher, and drag-and-drop. |
 | **Backend** | Express 4, TypeScript, Zod | REST API server with validation and Telegram webhook endpoints. |
 | **Storage** | Markdown, YAML frontmatter, `gray-matter` | Tasks are parsed to/from `.md` files; scratchpad notes are stored in `data/scratchpad/`. |
 | **Telegram** | grammy, chrono-node | Webhook-driven bot with interactive inline button callbacks and natural language date parsing. |

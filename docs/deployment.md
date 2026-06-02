@@ -45,6 +45,9 @@ TELEGRAM_WEBHOOK_URL=https://yourdomain.com/api/webhooks/telegram
 # Generate with: openssl rand -hex 32
 TELEGRAM_WEBHOOK_SECRET=<64-char-hex>
 CRON_SECRET=<64-char-hex>
+
+# Optional — default is /app/data/scratchpad (matches the Docker volume mount)
+# SCRATCHPAD_DIR=/app/data/scratchpad
 ```
 
 ### 3. Initialize data directories
@@ -276,31 +279,48 @@ docker compose up -d
 
 **Telegram webhook not receiving updates**
 
-To inspect, register, or delete the Telegram webhook, use the helper script which automatically loads configuration values from `.env`:
+Use the built-in Node.js management script (runs inside the container, reads env from Docker):
 
 ```bash
-# Check current webhook registration status
+# Check current webhook status and last error
+docker compose exec backend node dist/scripts/telegram-webhook.js info
+
+# Register / re-register webhook with current TELEGRAM_WEBHOOK_URL + TELEGRAM_WEBHOOK_SECRET
+docker compose exec backend node dist/scripts/telegram-webhook.js set
+
+# Remove webhook registration entirely
+docker compose exec backend node dist/scripts/telegram-webhook.js delete
+```
+
+Or use the host shell helper (reads `.env` directly):
+
+```bash
 ./scripts/telegram-webhook.sh info
-
-# Register the webhook
 ./scripts/telegram-webhook.sh set
-
-# Delete the webhook registration
 ./scripts/telegram-webhook.sh delete
 ```
 
-To override `.env` values dynamically:
+**401 Unauthorized from Telegram** (`last_error_message: Wrong response from the webhook: 401 Unauthorized`)
+
+This means the secret Telegram sends doesn't match what the backend expects. Caused by:
+- `TELEGRAM_WEBHOOK_SECRET` changed after the webhook was last registered, or
+- Webhook was registered while `TELEGRAM_WEBHOOK_SECRET` was unset (no secret), then the env var was later added
+
+Fix: re-register with the current secret:
+
 ```bash
-# Register with custom URL and secret
-./scripts/telegram-webhook.sh set --url https://example.com/api/webhooks/telegram --secret my-secret
+docker compose exec backend node dist/scripts/telegram-webhook.js set
 ```
 
-Alternatively, query or register manually via `curl`:
+> **Note:** `TELEGRAM_WEBHOOK_SECRET` must use only `A–Z a–z 0–9 _ -` characters (Telegram API requirement). A hex string from `openssl rand -hex 32` is always valid.
+
+Manual curl fallback:
+
 ```bash
-# Check webhook registration
+# Check current registration
 curl https://api.telegram.org/bot<TOKEN>/getWebhookInfo
 
-# Re-register manually
+# Re-register
 curl -X POST https://api.telegram.org/bot<TOKEN>/setWebhook \
   -d "url=https://yourdomain.com/api/webhooks/telegram" \
   -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>"
