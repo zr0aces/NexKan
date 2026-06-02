@@ -42,6 +42,19 @@ function getRootVersion() {
   return out.trim().replace(/^"|"$/g, '');
 }
 
+function getCurrentBranch() {
+  try {
+    const { execSync } = require('child_process');
+    return execSync('git branch --show-current', {
+      cwd: rootDir,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8',
+    }).trim() || 'main';
+  } catch (e) {
+    return 'main';
+  }
+}
+
 const arg = process.argv[2];
 if (arg === '-h' || arg === '--help') {
   usage();
@@ -57,13 +70,14 @@ try {
 
   const version = getRootVersion();
   const tag = `v${version}`;
+  const branch = getCurrentBranch();
 
   process.stdout.write(`\nRelease version prepared: ${version}\n\n`);
   process.stdout.write('Run these commands after reviewing changes:\n');
   process.stdout.write('  git add package.json package-lock.json backend/package.json frontend/package.json shared/package.json shared/src/lib/version.ts\n');
   process.stdout.write(`  git commit -m "chore(release): ${tag}"\n`);
   process.stdout.write(`  git tag -a "${tag}" -m "Release ${tag}"\n`);
-  process.stdout.write('  git push origin <branch>\n');
+  process.stdout.write(`  git push origin ${branch}\n`);
   process.stdout.write(`  git push origin "${tag}"\n`);
 } catch (error) {
   const message = error && error.message ? error.message : String(error);
