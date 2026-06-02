@@ -6,7 +6,8 @@ Personal Kanban board. Markdown files as storage. Telegram bot for remote access
 
 - **Board** — 4-column Kanban (Plan → Todo → In Progress → Done) with drag-and-drop reorder
 - **Dashboard** — overdue tasks, due today/tomorrow, summary stats
-- **Telegram bot** — create and manage tasks from your phone; natural language dates (`tomorrow`, `next monday`)
+- **Scratchpad** — save quick thoughts/reminders and easily convert them to cards later
+- **Telegram bot** — create and manage tasks or scratchpad notes from your phone; natural language dates (`tomorrow`, `next monday`)
 - **Notifications** — daily due-date alerts via Telegram, cron-triggered, deduplicated
 - **No database** — each task is a markdown file with YAML frontmatter; back up with rsync or git
 
@@ -20,6 +21,9 @@ Personal Kanban board. Markdown files as storage. Telegram bot for remote access
 | `/overdue` | Overdue tasks |
 | `/task <id>` | Detail view + inline action buttons |
 | `/move <id> <status>` | Move between columns |
+| `/note <text>` | Create scratchpad note |
+| `/notes` | List all scratchpad notes |
+| `/delnote <id>` | Delete a scratchpad note |
 | `/help` | Command reference |
 
 ## Stack

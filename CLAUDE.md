@@ -64,17 +64,18 @@ Frontend is served as static files via nginx from `frontend/dist/`. Run `npm run
 
 ### Storage Layer
 
-Tasks live in `data/tasks/` as markdown files named `{id}-{slug}.md`. Each file has YAML frontmatter (id, title, status, priority, tags, due_date, sort_order, timestamps) plus `## Description` and optional `## Notes` sections in the body.
-
-`backend/src/tasks/parser.ts` — serialize/deserialize between markdown files and `Task` objects via `gray-matter`.
-
-`backend/src/tasks/store.ts` — all file I/O: CRUD, filter, sort, reorder. Every operation reads from disk (no in-memory cache). `sort_order` is an integer per column; reorder rewrites all affected files atomically with snapshot-based rollback.
+- **Tasks**: Tasks live in `data/tasks/` as markdown files named `{id}-{slug}.md`. Each file has YAML frontmatter (id, title, status, priority, tags, due_date, sort_order, timestamps) plus `## Description` and optional `## Notes` sections in the body.
+- **Scratchpad Notes**: Notes live in `data/scratchpad/` as markdown files named `{id}.md`.
+- `backend/src/tasks/parser.ts` — serialize/deserialize between markdown files and `Task` objects via `gray-matter`.
+- `backend/src/tasks/store.ts` — all task file I/O: CRUD, filter, sort, reorder. Every operation reads from disk (no in-memory cache). `sort_order` is an integer per column; reorder rewrites all affected files atomically with snapshot-based rollback.
+- `backend/src/scratchpad/store.ts` — note file CRUD operations.
 
 ### Backend
 
-- `src/app.ts` — Express app, routes mounted at `/api/tasks` and `/api`
+- `src/app.ts` — Express app, routes mounted at `/api/tasks`, `/api/notes`, and `/api`
 - `src/server.ts` — HTTP listener, starts Telegram webhook registration
-- `src/tasks/router.ts` — REST endpoints, Zod validation on all inputs
+- `src/tasks/router.ts` — Task REST endpoints, Zod validation on all inputs
+- `src/scratchpad/router.ts` — Notes REST endpoints, Zod validation, and Task conversion logic
 - `src/telegram/` — grammy bot, webhook handler at `POST /api/webhooks/telegram`, per-command files in `commands/`, notification cron endpoint at `POST /api/notifications/check`
 
 ### Frontend

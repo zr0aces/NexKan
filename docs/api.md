@@ -157,6 +157,94 @@ DELETE /api/tasks/:id
 
 ---
 
+## Scratchpad Notes
+
+### List notes
+
+```
+GET /api/notes
+```
+
+**Response** `200 OK` — array of Note objects
+
+```json
+[
+  {
+    "id": "x9a1c2de",
+    "content": "Call dentist on Monday\nNeed to confirm appointment details.",
+    "created_at": "2026-06-01T08:00:00Z",
+    "updated_at": "2026-06-01T08:00:00Z"
+  }
+]
+```
+
+---
+
+### Create note
+
+```
+POST /api/notes
+Content-Type: application/json
+```
+
+**Body**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `content` | string | yes | Note content (first line is used as task title if converted) |
+
+**Response** `201 Created` — created Note object.
+
+---
+
+### Update note
+
+```
+PATCH /api/notes/:id
+Content-Type: application/json
+```
+
+**Body**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `content` | string | yes | Updated note content |
+
+**Response** `200 OK` — updated Note object, `404` if not found.
+
+---
+
+### Delete note
+
+```
+DELETE /api/notes/:id
+```
+
+**Response** `204 No Content`, `404` if not found.
+
+---
+
+### Convert note to task
+
+```
+POST /api/notes/:id/convert
+Content-Type: application/json
+```
+
+Converts a scratchpad note to a Kanban card and deletes the original note. The first line of the note content is used as the task title, and the remaining lines form the task description.
+
+**Body** (all fields optional)
+
+| Field | Type | Description |
+|---|---|---|
+| `due_date` | string | `YYYY-MM-DD` |
+| `priority` | string | `low` \| `medium` \| `high` |
+| `status` | string | `todo` \| `in-progress` \| `done`. Default: `todo` |
+
+**Response** `201 Created` — created Task object, `400` validation error, `404` if note not found.
+
+---
+
 ## Telegram
 
 ### Webhook
