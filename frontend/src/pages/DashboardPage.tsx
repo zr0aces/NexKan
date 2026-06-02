@@ -8,7 +8,7 @@ import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Logo } from '@/components/shared/Logo';
 import { AlertTriangle, Clock, CheckSquare, List } from 'lucide-react';
 import { startOfDay, isEqual, addDays } from 'date-fns';
-import { parseLocalDate, formatDate, isOverdue } from '@nexkan/shared';
+import { parseLocalDate, formatDate, isOverdue, VERSION } from '@nexkan/shared';
 import { ScratchpadPanel } from '@/components/scratchpad/ScratchpadPanel';
 
 export default function DashboardPage() {
@@ -35,7 +35,12 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground hover:opacity-90 transition-opacity">
               <Logo className="h-6 w-6 text-foreground" />
-              <span>NexKan</span>
+              <div className="flex items-baseline gap-1.5">
+                <span>NexKan</span>
+                <span className="text-[10px] font-mono font-medium text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded border border-border/50 select-none">
+                  v{VERSION}
+                </span>
+              </div>
             </Link>
             <nav className="flex gap-2 ml-2">
               <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Board</Link>

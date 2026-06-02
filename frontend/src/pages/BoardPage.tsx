@@ -8,7 +8,7 @@ import { FilterBar } from '@/components/shared/FilterBar';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
-import { Task, TaskFilters, TaskStatus } from '@nexkan/shared';
+import { Task, TaskFilters, TaskStatus, VERSION } from '@nexkan/shared';
 import { ScratchpadPanel } from '@/components/scratchpad/ScratchpadPanel';
 
 export default function BoardPage() {
@@ -42,7 +42,12 @@ export default function BoardPage() {
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground hover:opacity-90 transition-opacity">
               <Logo className="h-6 w-6 text-foreground" />
-              <span>NexKan</span>
+              <div className="flex items-baseline gap-1.5">
+                <span>NexKan</span>
+                <span className="text-[10px] font-mono font-medium text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded border border-border/50 select-none">
+                  v{VERSION}
+                </span>
+              </div>
             </Link>
             <nav className="flex gap-2 ml-2">
               <Link to="/" className="text-sm font-medium text-foreground">Board</Link>
