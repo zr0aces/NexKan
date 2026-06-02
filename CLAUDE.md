@@ -22,6 +22,16 @@ npm workspaces with three packages:
 npm install          # install all workspaces
 ```
 
+### Utility Scripts (run from `/home/san/workspace/NexKan`)
+
+```bash
+./scripts/add-user.sh <username>          # Add or update basic-auth user
+./scripts/remove-user.sh <username>       # Remove basic-auth user
+./scripts/telegram-webhook.sh <cmd>       # Manage Telegram webhook (info, set, delete)
+node scripts/sync-version.js [version]    # Sync version to all workspaces
+node scripts/release.js [version]         # Auto-sync, build, and output git release commands
+```
+
 ### Shared
 
 ```bash

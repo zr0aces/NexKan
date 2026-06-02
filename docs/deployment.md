@@ -276,6 +276,26 @@ docker compose up -d
 
 **Telegram webhook not receiving updates**
 
+To inspect, register, or delete the Telegram webhook, use the helper script which automatically loads configuration values from `.env`:
+
+```bash
+# Check current webhook registration status
+./scripts/telegram-webhook.sh info
+
+# Register the webhook
+./scripts/telegram-webhook.sh set
+
+# Delete the webhook registration
+./scripts/telegram-webhook.sh delete
+```
+
+To override `.env` values dynamically:
+```bash
+# Register with custom URL and secret
+./scripts/telegram-webhook.sh set --url https://example.com/api/webhooks/telegram --secret my-secret
+```
+
+Alternatively, query or register manually via `curl`:
 ```bash
 # Check webhook registration
 curl https://api.telegram.org/bot<TOKEN>/getWebhookInfo
