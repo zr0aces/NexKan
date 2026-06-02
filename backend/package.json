@@ -1,6 +1,6 @@
 {
   "name": "nexkan-backend",
-  "version": "2026.6.7",
+  "version": "2026.6.8",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
