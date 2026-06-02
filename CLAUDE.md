@@ -83,7 +83,7 @@ Frontend is served as static files via nginx from `frontend/dist/`. Run `npm run
 - `src/lib/api.ts` — typed fetch wrapper, base URL from `VITE_API_URL` env or `/api`
 - `src/hooks/useTasks.ts` — TanStack Query fetching with filter/sort params
 - `src/hooks/useTaskMutation.ts` — mutations (create, update, status, order, delete) with cache invalidation
-- `src/pages/BoardPage.tsx` — 4-column Kanban with dnd-kit drag-and-drop
+- `src/pages/BoardPage.tsx` — 3-column Kanban with dnd-kit drag-and-drop
 - `src/pages/DashboardPage.tsx` — overdue, due today/tomorrow, stats
 - `src/components/task/TaskDialog.tsx` — create/edit modal
 - `src/types/task.ts` — frontend re-exports (keep in sync with `@nexkan/shared`)

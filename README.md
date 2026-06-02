@@ -15,7 +15,7 @@ NexKan is built for developers and self-hosters who value data ownership and sim
 
 ## Features
 
-- **Board** — 4-column Kanban layout (Plan → Todo → In Progress → Done) with drag-and-drop reordering powered by `dnd-kit`.
+- **Board** — 3-column Kanban layout (Todo → In Progress → Done) with drag-and-drop reordering powered by `dnd-kit`.
 - **Dashboard** — Visual overview of overdue tasks, tasks due today/tomorrow, and board completion statistics.
 - **Scratchpad** — Save quick thoughts, snippets, or notes that can be easily converted into full Kanban cards later.
 - **Telegram Bot** — Create and manage cards, write notes, and list schedules from your phone.
