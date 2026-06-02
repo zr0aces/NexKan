@@ -35,20 +35,22 @@ export function MobileColumnNav({ activeStatus, onStatusChange, tasks }: MobileC
               aria-current={isActive ? 'page' : undefined}
               onClick={() => onStatusChange(status)}
               className={cn(
-                'flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors',
+                'flex flex-1 flex-col items-center gap-1.5 py-1.5 text-xs transition-colors',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span>{label}</span>
-              <span className={cn(
-                'text-[10px] font-semibold tabular-nums',
-                isActive ? 'text-primary' : 'text-muted-foreground'
-              )}>
-                {count}
-              </span>
+              <Icon className="h-[18px] w-[18px]" />
+              <div className="flex items-center gap-1 font-medium select-none">
+                <span>{label}</span>
+                <span className={cn(
+                  'text-[9px] px-1.5 py-0.2 rounded-full font-semibold tabular-nums',
+                  isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground bg-muted'
+                )}>
+                  {count}
+                </span>
+              </div>
             </button>
           );
         })}

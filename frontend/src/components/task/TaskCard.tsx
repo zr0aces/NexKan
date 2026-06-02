@@ -32,7 +32,7 @@ export function TaskCard({ task, today, onClick }: TaskCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        'bg-card border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow',
+        'bg-card border rounded-lg p-2.5 sm:p-3 cursor-pointer hover:shadow-md transition-shadow',
         overdue && 'border-destructive bg-destructive/10',
         isDragging && 'shadow-lg'
       )}

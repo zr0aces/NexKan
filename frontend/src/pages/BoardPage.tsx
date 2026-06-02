@@ -76,7 +76,7 @@ export default function BoardPage() {
         </div>
       </header>
 
-      <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 md:pb-4 space-y-4">
+      <main className="max-w-screen-2xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 pb-16 md:pb-4 space-y-4">
         <FilterBar filters={filters} onFiltersChange={setFilters} />
 
         {isLoading && (

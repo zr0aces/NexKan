@@ -32,7 +32,7 @@ export function NoteCard({ note, onUpdate, onDelete, onConvert }: NoteCardProps)
   }
 
   return (
-    <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 w-52 flex-shrink-0 flex flex-col gap-2 shadow-sm">
+    <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-2.5 sm:p-3 w-48 sm:w-52 flex-shrink-0 flex flex-col gap-2 shadow-sm">
       {editing ? (
         <textarea
           ref={textareaRef}

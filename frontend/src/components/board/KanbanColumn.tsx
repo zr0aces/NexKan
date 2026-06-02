@@ -33,7 +33,7 @@ export function KanbanColumn({ status, tasks, today, onTaskClick, onAddClick }: 
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col bg-muted/40 rounded-lg border-t-4 min-h-[400px] p-3',
+        'flex flex-col bg-muted/40 rounded-lg border-t-4 min-h-[350px] p-2.5 sm:p-3',
         COLUMN_STYLES[status],
         isOver && 'bg-muted/60'
       )}
