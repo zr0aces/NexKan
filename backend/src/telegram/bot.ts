@@ -19,6 +19,10 @@ export async function registerWebhook(): Promise<void> {
     return;
   }
   const b = getBot();
-  await b.api.setWebhook(url, { secret_token: secret });
+  const opts = secret ? { secret_token: secret } : {};
+  if (!secret) {
+    console.warn('TELEGRAM_WEBHOOK_SECRET not set — webhook registered without secret token (less secure)');
+  }
+  await b.api.setWebhook(url, opts);
   console.log(`Telegram webhook registered: ${url}`);
 }
