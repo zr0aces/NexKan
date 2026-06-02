@@ -44,7 +44,7 @@ export default function BoardPage() {
               <Logo className="h-6 w-6 text-foreground" />
               <div className="flex items-baseline gap-1.5">
                 <span>NexKan</span>
-                <span className="text-[10px] font-mono font-medium text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded border border-border/50 select-none">
+                <span className="text-[9px] font-mono font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 select-none tracking-wider">
                   v{VERSION}
                 </span>
               </div>
