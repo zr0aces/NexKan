@@ -19,9 +19,17 @@ export async function readAll(): Promise<Note[]> {
   const dir = getDir();
   try {
     const files = (await fs.promises.readdir(dir)).filter(f => f.endsWith('.md'));
-    const notes = await Promise.all(
+    const results = await Promise.allSettled(
       files.map(f => fs.promises.readFile(path.join(dir, f), 'utf-8').then(parseNote))
     );
+    const notes: Note[] = [];
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        notes.push(result.value);
+      } else {
+        console.error('Skipping corrupted scratchpad note:', result.reason);
+      }
+    }
     return notes.sort((a, b) => b.created_at.localeCompare(a.created_at));
   } catch (err: any) {
     if (err.code === 'ENOENT') return [];

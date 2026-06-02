@@ -2,8 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 
 export function webhookAuth(req: Request, res: Response, next: NextFunction): void {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  // Reject explicitly when no secret is configured — empty string is not valid.
+  if (!secret) {
+    console.error('TELEGRAM_WEBHOOK_SECRET is not set; rejecting webhook request');
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
   const header = req.headers['x-telegram-bot-api-secret-token'];
-  if (!secret || header !== secret) {
+  if (header !== secret) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
@@ -12,8 +18,14 @@ export function webhookAuth(req: Request, res: Response, next: NextFunction): vo
 
 export function cronAuth(req: Request, res: Response, next: NextFunction): void {
   const secret = process.env.CRON_SECRET;
+  // Reject explicitly when no secret is configured — empty string is not valid.
+  if (!secret) {
+    console.error('CRON_SECRET is not set; rejecting cron request');
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
   const header = req.headers['x-cron-secret'];
-  if (!secret || header !== secret) {
+  if (header !== secret) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }

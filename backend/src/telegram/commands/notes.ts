@@ -1,7 +1,8 @@
 import { readAll } from '../../scratchpad/store';
-import { escapeMd } from '../utils';
+import { escapeMd, isAuthorizedChat } from '../utils';
 
 export async function handleNotes(ctx: any): Promise<void> {
+  if (!isAuthorizedChat(ctx)) return;
   try {
     const notes = await readAll();
     if (notes.length === 0) {

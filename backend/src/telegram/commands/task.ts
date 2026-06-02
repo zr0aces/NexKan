@@ -1,9 +1,10 @@
 import { readById } from '../../tasks/store';
 import { InlineKeyboard } from 'grammy';
-import { escapeMd } from '../utils';
+import { escapeMd, isAuthorizedChat } from '../utils';
 import { formatDate } from '@nexkan/shared';
 
 export async function handleTask(ctx: any): Promise<void> {
+  if (!isAuthorizedChat(ctx)) return;
   try {
     const id: string = ctx.match?.trim() ?? '';
     if (!id) {

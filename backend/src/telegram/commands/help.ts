@@ -1,4 +1,7 @@
+import { isAuthorizedChat } from '../utils';
+
 export async function handleHelp(ctx: any): Promise<void> {
+  if (!isAuthorizedChat(ctx)) return;
   try {
     await ctx.reply(
       `NexKan Commands:\n\n` +
