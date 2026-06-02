@@ -28,6 +28,8 @@ npm install          # install all workspaces
 ./scripts/add-user.sh <username>          # Add or update basic-auth user
 ./scripts/remove-user.sh <username>       # Remove basic-auth user
 ./scripts/telegram-webhook.sh <cmd>       # Manage Telegram webhook (info, set, delete)
+# Or inside Docker (production):
+docker compose exec backend node dist/scripts/telegram-webhook.js <info|set|delete>
 node scripts/sync-version.js [version]    # Sync version to all workspaces
 node scripts/release.js [version]         # Auto-sync, build, and output git release commands
 ```
@@ -93,6 +95,8 @@ Frontend is served as static files via nginx from `frontend/dist/`. Run `npm run
 - `src/lib/api.ts` — typed fetch wrapper, base URL from `VITE_API_URL` env or `/api`
 - `src/hooks/useTasks.ts` — TanStack Query fetching with filter/sort params
 - `src/hooks/useTaskMutation.ts` — mutations (create, update, status, order, delete) with cache invalidation
+- `src/hooks/useNotes.ts` / `useNoteMutation.ts` — TanStack Query notes hooks
+- `src/components/scratchpad/ScratchpadPanel.tsx` — sticky notes panel on Board and Dashboard pages
 - `src/pages/BoardPage.tsx` — 3-column Kanban with dnd-kit drag-and-drop
 - `src/pages/DashboardPage.tsx` — overdue, due today/tomorrow, stats
 - `src/components/task/TaskDialog.tsx` — create/edit modal
@@ -103,6 +107,7 @@ Frontend is served as static files via nginx from `frontend/dist/`. Run `npm run
 Single source of truth for types and domain logic used by both backend and frontend:
 
 - `src/types/task.ts` — `Task`, `CreateTaskInput`, `UpdateTaskInput`, `TaskFilters`
+- `src/types/note.ts` — `Note` (scratchpad sticky notes)
 - `src/lib/task.ts` — `TASK_STATUSES`, `requiresDueDate()`, `isOverdue()`
 - `src/lib/date.ts` — `parseLocalDate()` (parses YYYY-MM-DD without timezone shift)
 
@@ -124,6 +129,7 @@ Copy `.env.example` to `.env`. Key vars:
 | `TELEGRAM_CHAT_ID` | Your Telegram user/group ID |
 | `TELEGRAM_WEBHOOK_URL` | Public HTTPS URL for webhook delivery |
 | `CRON_SECRET` | Auth header for `POST /api/notifications/check` |
+| `SCRATCHPAD_DIR` | Path to scratchpad note files (default: `data/scratchpad/`) |
 
 ## Key Invariants
 
@@ -131,3 +137,7 @@ Copy `.env.example` to `.env`. Key vars:
 - `sort_order` is column-scoped. Two tasks in different columns can share the same value; only within-column ordering matters.
 - `due_date` stored as `YYYY-MM-DD` string, never a Date object, in both files and API payloads.
 - `@nexkan/shared` must be built (`shared/dist/`) before backend or frontend TypeScript compilation succeeds.
+- Note filename format: `{8-char-nanoid}.md` (no slug, no section headings). Store controlled by `SCRATCHPAD_DIR` env var.
+- `shared/dist/` is gitignored — never `git add shared/dist/`. Only commit `shared/src/` changes after building.
+- `backend/tests/tasks/store.test.ts` is flaky when `backend/data/tasks/` has real files — `DATA_DIR` is a module-level const captured at import time, so `beforeEach` env overrides are ignored.
+- Telegram webhook middleware and `registerWebhook()` are symmetric: if `TELEGRAM_WEBHOOK_SECRET` unset → register without secret + middleware passes all; if set → validate header. Mismatch causes 401. Fix: `docker compose exec backend node dist/scripts/telegram-webhook.js set`.
