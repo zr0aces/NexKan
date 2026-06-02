@@ -5,7 +5,9 @@ import { parseTask, serializeTask } from './parser';
 import { Task, TaskStatus, TaskFilters, CreateTaskInput, UpdateTaskInput, parseLocalDate, requiresDueDate, isOverdue } from '@nexkan/shared';
 import { startOfDay, isEqual, addDays } from 'date-fns';
 
-const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data', 'tasks');
+function getDir(): string {
+  return process.env.DATA_DIR || path.join(process.cwd(), 'data', 'tasks');
+}
 
 function toSlug(title: string): string {
   return title
@@ -22,11 +24,12 @@ interface TaskEntry {
 }
 
 async function readAllEntries(): Promise<TaskEntry[]> {
+  const dir = getDir();
   try {
-    const files = (await fs.promises.readdir(DATA_DIR)).filter(f => f.endsWith('.md'));
+    const files = (await fs.promises.readdir(dir)).filter(f => f.endsWith('.md'));
     const entries = await Promise.all(
       files.map(async filename => {
-        const filePath = path.join(DATA_DIR, filename);
+        const filePath = path.join(dir, filename);
         try {
           const content = await fs.promises.readFile(filePath, 'utf-8');
           return { task: parseTask(content, filename), filePath };
@@ -48,12 +51,13 @@ async function readAllFiles(): Promise<Task[]> {
 }
 
 async function findEntry(id: string): Promise<TaskEntry | null> {
+  const dir = getDir();
   try {
-    const files = (await fs.promises.readdir(DATA_DIR)).filter(
+    const files = (await fs.promises.readdir(dir)).filter(
       f => f.startsWith(`${id}-`) && f.endsWith('.md')
     );
     if (files.length === 0) return null;
-    const filePath = path.join(DATA_DIR, files[0]);
+    const filePath = path.join(dir, files[0]);
     const content = await fs.promises.readFile(filePath, 'utf-8');
     return { task: parseTask(content, files[0]), filePath };
   } catch (err: any) {
@@ -145,7 +149,8 @@ export class NotFoundError extends Error {
 }
 
 export async function create(input: CreateTaskInput): Promise<Task> {
-  await fs.promises.mkdir(DATA_DIR, { recursive: true });
+  const dir = getDir();
+  await fs.promises.mkdir(dir, { recursive: true });
 
   const id = nanoid(8);
   const status = input.status ?? 'todo';
@@ -174,7 +179,7 @@ export async function create(input: CreateTaskInput): Promise<Task> {
   };
 
   const filename = `${id}-${toSlug(input.title)}.md`;
-  await fs.promises.writeFile(path.join(DATA_DIR, filename), serializeTask(task));
+  await fs.promises.writeFile(path.join(dir, filename), serializeTask(task));
   return task;
 }
 
