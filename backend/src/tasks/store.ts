@@ -23,27 +23,116 @@ interface TaskEntry {
   filePath: string;
 }
 
-async function readAllEntries(): Promise<TaskEntry[]> {
-  const dir = getDir();
-  try {
-    const files = (await fs.promises.readdir(dir)).filter(f => f.endsWith('.md'));
-    const entries = await Promise.all(
-      files.map(async filename => {
-        const filePath = path.join(dir, filename);
-        try {
-          const content = await fs.promises.readFile(filePath, 'utf-8');
-          return { task: parseTask(content, filename), filePath };
-        } catch {
-          console.error(`Skipping corrupted task file: ${filename}`);
-          return null;
-        }
-      })
-    );
-    return entries.filter((e): e is TaskEntry => e !== null);
-  } catch (err: any) {
-    if (err.code === 'ENOENT') return [];
-    throw err;
+interface CacheInstance {
+  cache: Map<string, TaskEntry>;
+  loaded: boolean;
+  watcher?: fs.FSWatcher;
+}
+
+const cacheInstances = new Map<string, CacheInstance>();
+
+export function closeWatchers(): void {
+  for (const inst of cacheInstances.values()) {
+    if (inst.watcher) {
+      inst.watcher.close();
+    }
   }
+  cacheInstances.clear();
+}
+
+function getCacheInstance(): CacheInstance {
+  const dir = getDir();
+  let inst = cacheInstances.get(dir);
+  if (!inst) {
+    inst = { cache: new Map(), loaded: false };
+    cacheInstances.set(dir, inst);
+  }
+  return inst;
+}
+
+async function ensureCacheLoaded(): Promise<CacheInstance> {
+  const dir = getDir();
+  const inst = getCacheInstance();
+
+  let files: string[] = [];
+  try {
+    files = (await fs.promises.readdir(dir)).filter(f => f.endsWith('.md'));
+  } catch (err: any) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+
+  let needsReload = !inst.loaded || files.length !== inst.cache.size;
+  if (!needsReload) {
+    for (const filename of files) {
+      const id = filename.split('-')[0];
+      if (!id || !inst.cache.has(id)) {
+        needsReload = true;
+        break;
+      }
+    }
+  }
+
+  if (!needsReload) return inst;
+
+  await fs.promises.mkdir(dir, { recursive: true });
+
+  const entries = await Promise.all(
+    files.map(async filename => {
+      const filePath = path.join(dir, filename);
+      try {
+        const content = await fs.promises.readFile(filePath, 'utf-8');
+        return { task: parseTask(content, filename), filePath };
+      } catch {
+        console.error(`Skipping corrupted task file: ${filename}`);
+        return null;
+      }
+    })
+  );
+
+  inst.cache.clear();
+  for (const entry of entries) {
+    if (entry) {
+      inst.cache.set(entry.task.id, entry);
+    }
+  }
+
+  inst.loaded = true;
+  setupFileWatcher(dir, inst);
+  return inst;
+}
+
+function setupFileWatcher(dir: string, inst: CacheInstance): void {
+  if (inst.watcher) return;
+
+  try {
+    inst.watcher = fs.watch(dir, async (eventType, filename) => {
+      if (!filename || !filename.endsWith('.md')) return;
+
+      const filePath = path.join(dir, filename);
+      const id = filename.split('-')[0];
+      if (!id || id.length !== 8) return;
+
+      try {
+        if (fs.existsSync(filePath)) {
+          const content = await fs.promises.readFile(filePath, 'utf-8');
+          const task = parseTask(content, filename);
+          inst.cache.set(id, { task, filePath });
+        } else {
+          inst.cache.delete(id);
+        }
+      } catch (err) {
+        // Silently skip if concurrent read/delete issues
+      }
+    });
+    inst.watcher.unref();
+  } catch (err) {
+    console.error(`Failed to setup watcher for dir ${dir}:`, err);
+  }
+}
+
+async function readAllEntries(): Promise<TaskEntry[]> {
+  const inst = await ensureCacheLoaded();
+  return Array.from(inst.cache.values());
 }
 
 async function readAllFiles(): Promise<Task[]> {
@@ -51,19 +140,8 @@ async function readAllFiles(): Promise<Task[]> {
 }
 
 async function findEntry(id: string): Promise<TaskEntry | null> {
-  const dir = getDir();
-  try {
-    const files = (await fs.promises.readdir(dir)).filter(
-      f => f.startsWith(`${id}-`) && f.endsWith('.md')
-    );
-    if (files.length === 0) return null;
-    const filePath = path.join(dir, files[0]);
-    const content = await fs.promises.readFile(filePath, 'utf-8');
-    return { task: parseTask(content, files[0]), filePath };
-  } catch (err: any) {
-    if (err.code === 'ENOENT') return null;
-    throw err;
-  }
+  const inst = await ensureCacheLoaded();
+  return inst.cache.get(id) ?? null;
 }
 
 function todayDate(): Date {
@@ -179,7 +257,12 @@ export async function create(input: CreateTaskInput): Promise<Task> {
   };
 
   const filename = `${id}-${toSlug(input.title)}.md`;
-  await fs.promises.writeFile(path.join(dir, filename), serializeTask(task));
+  const filePath = path.join(dir, filename);
+  await fs.promises.writeFile(filePath, serializeTask(task));
+
+  const inst = await ensureCacheLoaded();
+  inst.cache.set(id, { task, filePath });
+
   return task;
 }
 
@@ -203,7 +286,21 @@ export async function update(id: string, input: UpdateTaskInput): Promise<Task> 
     updated.due_date = input.due_date;
   }
 
-  await fs.promises.writeFile(filePath, serializeTask(updated));
+  let finalFilePath = filePath;
+  if (input.title !== undefined && input.title !== task.title) {
+    const dir = getDir();
+    const newFilename = `${id}-${toSlug(input.title)}.md`;
+    finalFilePath = path.join(dir, newFilename);
+    try {
+      await fs.promises.unlink(filePath);
+    } catch {}
+  }
+
+  await fs.promises.writeFile(finalFilePath, serializeTask(updated));
+
+  const inst = await ensureCacheLoaded();
+  inst.cache.set(id, { task: updated, filePath: finalFilePath });
+
   return updated;
 }
 
@@ -232,6 +329,10 @@ export async function updateStatus(id: string, status: string, due_date?: string
   };
 
   await fs.promises.writeFile(filePath, serializeTask(updated));
+
+  const inst = await ensureCacheLoaded();
+  inst.cache.set(id, { task: updated, filePath });
+
   return updated;
 }
 
@@ -247,21 +348,28 @@ export async function updateOrder(id: string, position: number): Promise<Task> {
   const others = inColumn.filter(e => e.task.id !== id);
   others.splice(position, 0, entry);
 
-  // Snapshot original tasks for rollback; derive new sort_order from insertion index
   const snapshots = others.map((e, i) => ({
     filePath: e.filePath,
     original: e.task,
     updated: { ...e.task, sort_order: i + 1, updated_at: new Date().toISOString() },
   }));
 
+  const inst = await ensureCacheLoaded();
+
   try {
     await Promise.all(
       snapshots.map(snap => fs.promises.writeFile(snap.filePath, serializeTask(snap.updated)))
     );
+    for (const snap of snapshots) {
+      inst.cache.set(snap.updated.id, { task: snap.updated, filePath: snap.filePath });
+    }
   } catch (err) {
     await Promise.allSettled(
       snapshots.map(snap => fs.promises.writeFile(snap.filePath, serializeTask(snap.original)))
     );
+    for (const snap of snapshots) {
+      inst.cache.set(snap.original.id, { task: snap.original, filePath: snap.filePath });
+    }
     throw err;
   }
 
@@ -274,4 +382,7 @@ export async function deleteTask(id: string): Promise<void> {
   const entry = await findEntry(id);
   if (!entry) throw new NotFoundError(id);
   await fs.promises.unlink(entry.filePath);
+
+  const inst = await ensureCacheLoaded();
+  inst.cache.delete(id);
 }

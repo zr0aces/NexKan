@@ -82,4 +82,29 @@ describe('checkAndNotify', () => {
     await checkAndNotify();
     expect(getBot().api.sendMessage).not.toHaveBeenCalled();
   });
+
+  it('prunes obsolete notification keys from the sent cache', async () => {
+    // Setup sent cache containing:
+    // 1. An overdue key from a previous day for an active task (should be pruned)
+    // 2. An overdue key for today for an active task (should be kept)
+    // 3. A notification key for a task that is now done or deleted (should be pruned)
+    const initialSent = {
+      'abc12345:overdue:2020-01-01': true,
+      [`abc12345:overdue:${new Date().toISOString().slice(0, 10)}`]: true,
+      'done1234:due-today:2020-01-01': true,
+    };
+    fs.writeFileSync(tmpFile, JSON.stringify(initialSent, null, 2));
+
+    (readAll as jest.Mock).mockResolvedValue([
+      makeTask({ id: 'abc12345', due_date: '2020-01-01', status: 'todo' }),
+    ]);
+
+    await checkAndNotify();
+
+    const saved = JSON.parse(fs.readFileSync(tmpFile, 'utf-8'));
+    const todayStr = new Date().toISOString().slice(0, 10);
+    expect(saved).toEqual({
+      [`abc12345:overdue:${todayStr}`]: true,
+    });
+  });
 });

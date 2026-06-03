@@ -27,8 +27,8 @@ export async function handleCallback(ctx: Context): Promise<void> {
         `Status: ${task.status}`,
         task.due_date ? `Due: ${formatDate(task.due_date)}` : '',
         task.priority ? `Priority: ${task.priority}` : '',
-        task.tags.length > 0 ? `Tags: ${task.tags.join(', ')}` : '',
-        task.description ? `\n${task.description}` : '',
+        task.tags.length > 0 ? `Tags: ${task.tags.map(escapeMd).join(', ')}` : '',
+        task.description ? `\n${escapeMd(task.description)}` : '',
       ].filter(Boolean);
 
       const keyboard = buildTaskKeyboard(task.id);

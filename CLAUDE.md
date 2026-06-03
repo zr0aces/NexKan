@@ -139,5 +139,4 @@ Copy `.env.example` to `.env`. Key vars:
 - `@nexkan/shared` must be built (`shared/dist/`) before backend or frontend TypeScript compilation succeeds.
 - Note filename format: `{8-char-nanoid}.md` (no slug, no section headings). Store controlled by `SCRATCHPAD_DIR` env var.
 - `shared/dist/` is gitignored — never `git add shared/dist/`. Only commit `shared/src/` changes after building.
-- `backend/tests/tasks/store.test.ts` is flaky when `backend/data/tasks/` has real files — `DATA_DIR` is a module-level const captured at import time, so `beforeEach` env overrides are ignored.
 - Telegram webhook middleware and `registerWebhook()` are symmetric: if `TELEGRAM_WEBHOOK_SECRET` unset → register without secret + middleware passes all; if set → validate header. Mismatch causes 401. Fix: `docker compose exec backend node dist/scripts/telegram-webhook.js set`.

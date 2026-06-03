@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { readAll, readById, create, update, deleteNote, NotFoundError } from '../../src/scratchpad/store';
+import { readAll, readById, create, update, deleteNote, NotFoundError, closeWatchers } from '../../src/scratchpad/store';
 
 let tmpDir: string;
 
@@ -11,6 +11,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  closeWatchers();
   fs.rmSync(tmpDir, { recursive: true, force: true });
   delete process.env.SCRATCHPAD_DIR;
 });
@@ -84,3 +85,49 @@ describe('deleteNote', () => {
     await expect(deleteNote('notexist')).rejects.toThrow(NotFoundError);
   });
 });
+
+describe('security: path traversal prevention', () => {
+  it('readById returns null for traversal path', async () => {
+    const found = await readById('../etc/passwd');
+    expect(found).toBeNull();
+  });
+
+  it('update throws NotFoundError for traversal path', async () => {
+    await expect(update('../etc/passwd', 'hack')).rejects.toThrow(NotFoundError);
+  });
+
+  it('deleteNote throws NotFoundError for traversal path', async () => {
+    await expect(deleteNote('../etc/passwd')).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe('file watcher cache synchronization', () => {
+  it('updates cache dynamically when note file is created or deleted externally', async () => {
+    // Initial read to spin up cache & watcher
+    await readAll();
+
+    // Write directly to filesystem bypassed write-through logic
+    const noteId = 'ext12345';
+    const noteContent = '---\nid: ext12345\ncreated_at: 2026-05-01T00:00:00Z\nupdated_at: 2026-05-01T00:00:00Z\n---\nExternal Note';
+    fs.writeFileSync(path.join(tmpDir, `${noteId}.md`), noteContent);
+
+    // Wait a brief moment for the FSWatcher event to propagate
+    await new Promise(r => setTimeout(r, 60));
+
+    // Confirm file watcher loaded it into cache
+    const found = await readById(noteId);
+    expect(found).toBeDefined();
+    expect(found?.content).toBe('External Note');
+
+    // Delete directly on filesystem
+    fs.unlinkSync(path.join(tmpDir, `${noteId}.md`));
+
+    // Wait again for propagation
+    await new Promise(r => setTimeout(r, 60));
+
+    // Confirm it is removed from cache
+    const deletedFound = await readById(noteId);
+    expect(deletedFound).toBeNull();
+  });
+});
+

@@ -86,6 +86,19 @@ describe('handleAdd', () => {
     );
   });
 
+  it('preserves text after the parsed date in the title', async () => {
+    (create as jest.Mock).mockResolvedValue(makeTask());
+    const ctx = makeCtx('/add Call dentist tomorrow to schedule appointment');
+    ctx.match = 'Call dentist tomorrow to schedule appointment';
+    await handleAdd(ctx);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Call dentist to schedule appointment',
+        due_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      })
+    );
+  });
+
   it('catches errors and replies with message', async () => {
     (create as jest.Mock).mockRejectedValue(new Error('Disk error'));
     const ctx = makeCtx('/add Task');

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { readAll, readById, create, update, updateStatus, updateOrder, deleteTask } from '../../src/tasks/store';
+import { readAll, readById, create, update, updateStatus, updateOrder, deleteTask, closeWatchers } from '../../src/tasks/store';
 import { serializeTask } from '../../src/tasks/parser';
 import { Task } from '@nexkan/shared';
 
@@ -34,6 +34,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  closeWatchers();
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
@@ -212,5 +213,36 @@ describe('deleteTask', () => {
 
   it('throws when task does not exist', async () => {
     await expect(deleteTask('notexist')).rejects.toThrow('not found');
+  });
+});
+
+describe('file watcher cache synchronization', () => {
+  it('updates cache dynamically when file is created or deleted externally', async () => {
+    // Initial read to spin up cache & watcher
+    await readAll();
+
+    const externalTask = makeTask({ id: 'ext12345', title: 'External Task' });
+    
+    // Write directly to filesystem bypassed write-through logic
+    writeTask(externalTask);
+
+    // Wait a brief moment for the FSWatcher event to propagate
+    await new Promise(r => setTimeout(r, 60));
+
+    // Confirm file watcher loaded it into cache
+    const found = await readById('ext12345');
+    expect(found).toBeDefined();
+    expect(found?.title).toBe('External Task');
+
+    // Delete directly on filesystem
+    const filename = `ext12345-external-task.md`;
+    fs.unlinkSync(path.join(tmpDir, filename));
+
+    // Wait again for propagation
+    await new Promise(r => setTimeout(r, 60));
+
+    // Confirm it is removed from cache
+    const deletedFound = await readById('ext12345');
+    expect(deletedFound).toBeNull();
   });
 });

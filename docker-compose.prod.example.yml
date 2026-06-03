@@ -10,6 +10,7 @@ services:
       - "3000"
     volumes:
       - ./data/tasks:/app/data/tasks
+      - ./data/scratchpad:/app/data/scratchpad
       - ./data/notifications-sent.json:/app/data/notifications-sent.json
     env_file: .env
     restart: unless-stopped

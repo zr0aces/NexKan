@@ -5,6 +5,8 @@ import * as os from 'os';
 import { serializeTask } from '../../src/tasks/parser';
 import { Task } from '@nexkan/shared';
 
+import { closeWatchers } from '../../src/tasks/store';
+
 let tmpDir: string;
 let app: typeof import('../../src/app').default;
 
@@ -41,6 +43,7 @@ afterAll(() => {
 });
 
 afterEach(() => {
+  closeWatchers();
   fs.readdirSync(tmpDir).forEach(f => fs.unlinkSync(path.join(tmpDir, f)));
 });
 
