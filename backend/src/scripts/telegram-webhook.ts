@@ -5,6 +5,7 @@
  *   docker compose exec backend node dist/scripts/telegram-webhook.js info
  *   docker compose exec backend node dist/scripts/telegram-webhook.js set
  *   docker compose exec backend node dist/scripts/telegram-webhook.js delete
+ *   docker compose exec backend node dist/scripts/telegram-webhook.js set-commands
  *
  * Usage (dev):
  *   cd backend && npx ts-node -r tsconfig-paths/register src/scripts/telegram-webhook.ts info
@@ -16,8 +17,8 @@ const SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 
 const command = process.argv[2];
 
-if (!['set', 'delete', 'info'].includes(command)) {
-  console.error('Usage: telegram-webhook.js <set|delete|info>');
+if (!['set', 'delete', 'info', 'set-commands'].includes(command)) {
+  console.error('Usage: telegram-webhook.js <set|delete|info|set-commands>');
   process.exit(1);
 }
 
@@ -75,11 +76,30 @@ async function deleteWebhook(): Promise<void> {
   console.log('\nWebhook deleted. Bot will no longer receive updates until re-registered.');
 }
 
+async function setCommands(): Promise<void> {
+  const commands = [
+    { command: 'add',     description: 'Create task — /add <title> [date]' },
+    { command: 'tasks',   description: 'List all active (non-done) tasks' },
+    { command: 'today',   description: 'List tasks due today' },
+    { command: 'overdue', description: 'List overdue tasks' },
+    { command: 'task',    description: 'Task detail + actions — /task <id>' },
+    { command: 'move',    description: 'Move task — /move <id> <todo|in-progress|done>' },
+    { command: 'note',    description: 'Save a scratchpad note — /note <text>' },
+    { command: 'notes',   description: 'List all scratchpad notes' },
+    { command: 'delnote', description: 'Delete a scratchpad note — /delnote <id>' },
+    { command: 'help',    description: 'Show command reference' },
+  ];
+  await apiCall('setMyCommands', { commands });
+  console.log(`\nRegistered ${commands.length} bot commands:`);
+  commands.forEach(c => console.log(`  /${c.command} — ${c.description}`));
+}
+
 (async () => {
   try {
     if (command === 'info') await info();
     else if (command === 'set') await set();
     else if (command === 'delete') await deleteWebhook();
+    else if (command === 'set-commands') await setCommands();
   } catch (err) {
     console.error('Error:', err instanceof Error ? err.message : err);
     process.exit(1);

@@ -26,3 +26,20 @@ export async function registerWebhook(): Promise<void> {
   await b.api.setWebhook(url, opts);
   console.log(`Telegram webhook registered: ${url}`);
 }
+
+export async function registerBotCommands(): Promise<void> {
+  const b = getBot();
+  await b.api.setMyCommands([
+    { command: 'add',     description: 'Create task — /add <title> [date]' },
+    { command: 'tasks',   description: 'List all active (non-done) tasks' },
+    { command: 'today',   description: 'List tasks due today' },
+    { command: 'overdue', description: 'List overdue tasks' },
+    { command: 'task',    description: 'Task detail + actions — /task <id>' },
+    { command: 'move',    description: 'Move task — /move <id> <todo|in-progress|done>' },
+    { command: 'note',    description: 'Save a scratchpad note — /note <text>' },
+    { command: 'notes',   description: 'List all scratchpad notes' },
+    { command: 'delnote', description: 'Delete a scratchpad note — /delnote <id>' },
+    { command: 'help',    description: 'Show command reference' },
+  ]);
+  console.log('Telegram bot commands registered');
+}

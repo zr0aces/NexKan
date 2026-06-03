@@ -288,6 +288,9 @@ docker compose exec backend node dist/scripts/telegram-webhook.js info
 # Register / re-register webhook with current TELEGRAM_WEBHOOK_URL + TELEGRAM_WEBHOOK_SECRET
 docker compose exec backend node dist/scripts/telegram-webhook.js set
 
+# Register bot commands with Telegram (shows autocomplete in chat)
+docker compose exec backend node dist/scripts/telegram-webhook.js set-commands
+
 # Remove webhook registration entirely
 docker compose exec backend node dist/scripts/telegram-webhook.js delete
 ```
