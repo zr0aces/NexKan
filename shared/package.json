@@ -1,6 +1,6 @@
 {
   "name": "@nexkan/shared",
-  "version": "2026.6.8",
+  "version": "2026.6.9",
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
