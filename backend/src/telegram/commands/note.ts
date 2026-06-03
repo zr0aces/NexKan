@@ -1,8 +1,7 @@
 import { create } from '../../scratchpad/store';
-import { isAuthorizedChat } from '../utils';
+import type { CommandContext } from 'grammy';
 
-export async function handleNote(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleNote(ctx: CommandContext<any>): Promise<void> {
   const text: string = ctx.match?.trim() ?? '';
   if (!text) {
     await ctx.reply('Usage: /note <text>\nExample: /note Call dentist Monday');

@@ -1,14 +1,14 @@
 import { readAll } from '../../tasks/store';
 import { Task, formatDate } from '@nexkan/shared';
-import { escapeMd, isAuthorizedChat } from '../utils';
+import { escapeMd } from '../utils';
+import type { Context } from 'grammy';
 
 function formatTask(t: Task): string {
   const due = t.due_date ? ` · Due: ${formatDate(t.due_date)}` : '';
   return `• ${escapeMd(t.title)} (${t.id})${due}`;
 }
 
-export async function handleOverdue(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleOverdue(ctx: Context): Promise<void> {
   try {
     const tasks = await readAll({ overdue: true });
     if (tasks.length === 0) {

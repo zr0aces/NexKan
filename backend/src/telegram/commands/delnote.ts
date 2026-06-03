@@ -1,8 +1,7 @@
 import { deleteNote, NotFoundError } from '../../scratchpad/store';
-import { isAuthorizedChat } from '../utils';
+import type { CommandContext } from 'grammy';
 
-export async function handleDelnote(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleDelnote(ctx: CommandContext<any>): Promise<void> {
   const id: string = ctx.match?.trim() ?? '';
   if (!id) {
     await ctx.reply('Usage: /delnote <id>\nExample: /delnote abc12345');

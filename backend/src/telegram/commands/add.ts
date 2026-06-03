@@ -2,10 +2,9 @@ import * as chrono from 'chrono-node';
 import { format } from 'date-fns';
 import { create } from '../../tasks/store';
 import { formatDate } from '@nexkan/shared';
-import { isAuthorizedChat } from '../utils';
+import type { CommandContext } from 'grammy';
 
-export async function handleAdd(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleAdd(ctx: CommandContext<any>): Promise<void> {
   try {
     const text: string = ctx.match?.trim() ?? '';
     if (!text) {

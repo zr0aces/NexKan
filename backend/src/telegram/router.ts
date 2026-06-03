@@ -14,6 +14,7 @@ import { handleNotes } from './commands/notes';
 import { handleDelnote } from './commands/delnote';
 import { handleCallback } from './callbacks';
 import { webhookCallback } from 'grammy';
+import { isAuthorizedChat } from './utils';
 
 export const telegramRouter = Router();
 
@@ -59,6 +60,29 @@ telegramRouter.post('/telegram/test', async (_req: Request, res: Response) => {
 
 export function setupBotCommands(): void {
   const bot = getBot();
+
+  // Centralized authorization middleware
+  bot.use(async (ctx, next) => {
+    if (!isAuthorizedChat(ctx)) {
+      if (ctx.callbackQuery) {
+        await ctx.answerCallbackQuery({ text: '❌ Unauthorized access.' });
+      } else {
+        await ctx.reply('❌ Unauthorized access. Please configure TELEGRAM_CHAT_ID.');
+      }
+      return;
+    }
+    await next();
+  });
+
+  // Start welcome command
+  bot.command('start', async (ctx) => {
+    await ctx.reply(
+      "👋 Welcome to **NexKan**! I am your personal Kanban board assistant.\n\n" +
+      "Use /help to see all available commands.",
+      { parse_mode: 'Markdown' }
+    );
+  });
+
   bot.command('add', handleAdd);
   bot.command('tasks', handleTasks);
   bot.command('today', handleToday);

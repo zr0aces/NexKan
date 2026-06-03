@@ -1,9 +1,9 @@
 import { readById } from '../../tasks/store';
-import { escapeMd, isAuthorizedChat, buildTaskKeyboard } from '../utils';
+import { escapeMd, buildTaskKeyboard } from '../utils';
 import { formatDate } from '@nexkan/shared';
+import type { CommandContext } from 'grammy';
 
-export async function handleTask(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleTask(ctx: CommandContext<any>): Promise<void> {
   try {
     const id: string = ctx.match?.trim() ?? '';
     if (!id) {

@@ -1,8 +1,8 @@
 import { readAll } from '../../scratchpad/store';
-import { escapeMd, isAuthorizedChat } from '../utils';
+import { escapeMd } from '../utils';
+import type { Context } from 'grammy';
 
-export async function handleNotes(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleNotes(ctx: Context): Promise<void> {
   try {
     const notes = await readAll();
     if (notes.length === 0) {

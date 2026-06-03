@@ -1,6 +1,7 @@
 import { readAll } from '../../tasks/store';
 import { Task } from '@nexkan/shared';
-import { escapeMd, isAuthorizedChat } from '../utils';
+import { escapeMd } from '../utils';
+import type { Context } from 'grammy';
 
 function formatTask(t: Task): string {
   const priority = t.priority ? ` [${t.priority}]` : '';
@@ -8,8 +9,7 @@ function formatTask(t: Task): string {
   return `• ${escapeMd(t.title)} (${t.id})${priority}${status}`;
 }
 
-export async function handleToday(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleToday(ctx: Context): Promise<void> {
   try {
     const tasks = await readAll({ due_today: true });
     if (tasks.length === 0) {

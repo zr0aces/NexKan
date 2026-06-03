@@ -1,9 +1,8 @@
 import { readById, updateStatus } from '../../tasks/store';
 import { TaskStatus, TASK_STATUSES, requiresDueDate } from '@nexkan/shared';
-import { isAuthorizedChat } from '../utils';
+import type { CommandContext } from 'grammy';
 
-export async function handleMove(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleMove(ctx: CommandContext<any>): Promise<void> {
   try {
     const args: string = ctx.match?.trim() ?? '';
     const parts = args.split(/\s+/);

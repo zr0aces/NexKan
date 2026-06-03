@@ -1,7 +1,6 @@
-import { isAuthorizedChat } from '../utils';
+import type { Context } from 'grammy';
 
-export async function handleHelp(ctx: any): Promise<void> {
-  if (!isAuthorizedChat(ctx)) return;
+export async function handleHelp(ctx: Context): Promise<void> {
   try {
     await ctx.reply(
       `NexKan Commands:\n\n` +
