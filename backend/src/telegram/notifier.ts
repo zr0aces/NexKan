@@ -53,11 +53,11 @@ export async function checkAndNotify(): Promise<void> {
     if (isBefore(dueDate, today)) {
       const key = `${task.id}:overdue:${todayStr()}`;
       if (!sent[key]) {
-        pending.push({ key, send: () => bot.api.sendMessage(
+        pending.push({ key, send: async () => { await bot.api.sendMessage(
           chatId,
           `⚠️ Overdue: ${task.title} (${task.id})\nDue: ${formatDate(task.due_date!)} · Status: ${task.status}`,
           { reply_markup: keyboard }
-        ).then(() => {}) });
+        ); } });
       }
       continue;
     }
@@ -65,11 +65,11 @@ export async function checkAndNotify(): Promise<void> {
     if (isEqual(dueDate, today)) {
       const key = `${task.id}:due-today:${task.due_date}`;
       if (!sent[key]) {
-        pending.push({ key, send: () => bot.api.sendMessage(
+        pending.push({ key, send: async () => { await bot.api.sendMessage(
           chatId,
           `🔔 Due today: ${task.title} (${task.id})\nStatus: ${task.status}`,
           { reply_markup: keyboard }
-        ).then(() => {}) });
+        ); } });
       }
       continue;
     }
@@ -77,11 +77,11 @@ export async function checkAndNotify(): Promise<void> {
     if (isEqual(dueDate, tomorrow)) {
       const key = `${task.id}:due-tomorrow:${task.due_date}`;
       if (!sent[key]) {
-        pending.push({ key, send: () => bot.api.sendMessage(
+        pending.push({ key, send: async () => { await bot.api.sendMessage(
           chatId,
           `📅 Due tomorrow: ${task.title} (${task.id})\nStatus: ${task.status}`,
           { reply_markup: keyboard }
-        ).then(() => {}) });
+        ); } });
       }
     }
   }

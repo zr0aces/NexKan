@@ -1,7 +1,7 @@
-import { updateStatus, readById } from '../tasks/store';
+import { updateStatus } from '../tasks/store';
 import type { Context } from 'grammy';
-import { escapeMd, isAuthorizedChat, buildTaskKeyboard } from './utils';
-import { formatDate, TASK_STATUSES, TaskStatus } from '@nexkan/shared';
+import { isAuthorizedChat } from './utils';
+import { TASK_STATUSES, TaskStatus } from '@nexkan/shared';
 
 export async function handleCallback(ctx: Context): Promise<void> {
   if (!isAuthorizedChat(ctx)) {
@@ -32,31 +32,6 @@ export async function handleCallback(ctx: Context): Promise<void> {
         ? 'Please set a due date before moving to this status.'
         : 'Something went wrong.';
       await ctx.answerCallbackQuery({ text });
-    }
-    return;
-  }
-
-  if (data.startsWith('view:')) {
-    const taskId = data.split(':')[1];
-    try {
-      const task = await readById(taskId);
-      if (!task) {
-        await ctx.answerCallbackQuery({ text: 'Task not found.' });
-        return;
-      }
-      const lines = [
-        `*${escapeMd(task.title)}* (${task.id})`,
-        `Status: ${task.status}`,
-        task.due_date ? `Due: ${formatDate(task.due_date)}` : '',
-        task.priority ? `Priority: ${task.priority}` : '',
-      ].filter(Boolean);
-
-      const keyboard = buildTaskKeyboard(task.id);
-
-      await ctx.answerCallbackQuery();
-      await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown', reply_markup: keyboard });
-    } catch {
-      await ctx.answerCallbackQuery({ text: 'Something went wrong.' });
     }
     return;
   }

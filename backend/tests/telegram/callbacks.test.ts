@@ -1,12 +1,10 @@
 jest.mock('../../src/tasks/store', () => ({
   updateStatus: jest.fn(),
-  readById: jest.fn(),
 }));
 
-import { updateStatus, readById } from '../../src/tasks/store';
+import { updateStatus } from '../../src/tasks/store';
 import { handleCallback } from '../../src/telegram/callbacks';
 import { Task } from '@nexkan/shared';
-import { InlineKeyboard } from 'grammy';
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -41,17 +39,6 @@ describe('handleCallback', () => {
     const ctx = makeCtx('move:abc12345:todo');
     await handleCallback(ctx);
     expect(ctx.answerCallbackQuery).toHaveBeenCalledWith({ text: expect.stringContaining('due date') });
-  });
-
-  it('handles view:{id} — shows task detail', async () => {
-    (readById as jest.Mock).mockResolvedValue(makeTask({ title: 'My Task' }));
-    const ctx = makeCtx('view:abc12345');
-    await handleCallback(ctx);
-    expect(readById).toHaveBeenCalledWith('abc12345');
-    expect(ctx.reply).toHaveBeenCalledWith(
-      expect.stringContaining('My Task'),
-      expect.objectContaining({ reply_markup: expect.anything() })
-    );
   });
 
   it('ignores unknown callback data', async () => {

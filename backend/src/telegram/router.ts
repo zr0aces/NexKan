@@ -22,7 +22,7 @@ telegramRouter.post('/webhooks/telegram', webhookAuth, async (req: Request, res:
     await webhookCallback(getBot(), 'express')(req, res);
   } catch (err) {
     console.error('Webhook error:', err);
-    res.sendStatus(200);
+    if (!res.headersSent) res.sendStatus(200);
   }
 });
 
