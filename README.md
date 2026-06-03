@@ -47,6 +47,7 @@ NexKan includes an integrated Telegram bot (built with `grammy`) that serves as 
 ### Utility Commands
 | Command | Action |
 |---------|--------|
+| `/start`| Welcome message and display the help menu. |
 | `/help` | Display command reference and bot usage instructions. |
 
 > 💡 **Natural Language Dates**: The `/add` command uses `chrono-node` to parse dates. You can write relative terms like `tomorrow`, `next friday`, `in 3 days`, or absolute dates like `2026-06-15`.

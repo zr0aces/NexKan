@@ -27,9 +27,9 @@ npm install          # install all workspaces
 ```bash
 ./scripts/add-user.sh <username>          # Add or update basic-auth user
 ./scripts/remove-user.sh <username>       # Remove basic-auth user
-./scripts/telegram-webhook.sh <cmd>       # Manage Telegram webhook (info, set, delete)
+./scripts/telegram-webhook.sh <cmd>       # Manage Telegram webhook (info, set, delete, set-commands)
 # Or inside Docker (production):
-docker compose exec backend node dist/scripts/telegram-webhook.js <info|set|delete>
+docker compose exec backend node dist/scripts/telegram-webhook.js <info|set|delete|set-commands>
 node scripts/sync-version.js [version]    # Sync version to all workspaces
 node scripts/release.js [version]         # Auto-sync, build, and output git release commands
 ```

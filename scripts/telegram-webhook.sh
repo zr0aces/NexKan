@@ -23,12 +23,13 @@ URL="${TELEGRAM_WEBHOOK_URL}"
 SECRET="${TELEGRAM_WEBHOOK_SECRET}"
 
 usage() {
-  echo "Usage: $0 [info|set|delete] [options]"
+  echo "Usage: $0 [info|set|delete|set-commands] [options]"
   echo ""
   echo "Commands:"
-  echo "  info     Show current webhook status on Telegram"
-  echo "  set      Set webhook to the URL configured in .env or passed via --url"
-  echo "  delete   Remove webhook registration from Telegram"
+  echo "  info          Show current webhook status on Telegram"
+  echo "  set           Set webhook to the URL configured in .env or passed via --url"
+  echo "  delete        Remove webhook registration from Telegram"
+  echo "  set-commands  Register NexKan bot autocomplete commands list with Telegram"
   echo ""
   echo "Options (overrides .env values):"
   echo "  --token <token>   Telegram Bot Token (from @BotFather)"
@@ -41,7 +42,7 @@ usage() {
 COMMAND=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    info|set|delete)
+    info|set|delete|set-commands)
       COMMAND="$1"
       shift
       ;;
@@ -109,5 +110,25 @@ case "$COMMAND" in
   delete)
     echo "Deleting Telegram webhook registration..."
     curl -s "https://api.telegram.org/bot${TOKEN}/deleteWebhook" | format_json
+    ;;
+  set-commands)
+    echo "Registering bot commands on Telegram..."
+    curl -s -X POST "https://api.telegram.org/bot${TOKEN}/setMyCommands" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "commands": [
+          {"command": "start", "description": "Welcome message and display the help menu"},
+          {"command": "add", "description": "Create task — /add <title> [date]"},
+          {"command": "tasks", "description": "List all active (non-done) tasks"},
+          {"command": "today", "description": "List tasks due today"},
+          {"command": "overdue", "description": "List overdue tasks"},
+          {"command": "task", "description": "Task detail + actions — /task <id>"},
+          {"command": "move", "description": "Move task — /move <id> <todo|in-progress|done>"},
+          {"command": "note", "description": "Save a scratchpad note — /note <text>"},
+          {"command": "notes", "description": "List all scratchpad notes"},
+          {"command": "delnote", "description": "Delete a scratchpad note — /delnote <id>"},
+          {"command": "help", "description": "Show command reference"}
+        ]
+      }' | format_json
     ;;
 esac

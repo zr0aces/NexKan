@@ -30,6 +30,7 @@ export async function registerWebhook(): Promise<void> {
 export async function registerBotCommands(): Promise<void> {
   const b = getBot();
   await b.api.setMyCommands([
+    { command: 'start',   description: 'Welcome message and display the help menu' },
     { command: 'add',     description: 'Create task — /add <title> [date]' },
     { command: 'tasks',   description: 'List all active (non-done) tasks' },
     { command: 'today',   description: 'List tasks due today' },
