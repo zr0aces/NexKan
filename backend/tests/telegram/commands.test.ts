@@ -99,6 +99,19 @@ describe('handleAdd', () => {
     );
   });
 
+  it('correctly handles substring overlap when removing date from title', async () => {
+    (create as jest.Mock).mockResolvedValue(makeTask());
+    const ctx = makeCtx('/add buy sunscreen sun');
+    ctx.match = 'buy sunscreen sun';
+    await handleAdd(ctx);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'buy sunscreen',
+        due_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      })
+    );
+  });
+
   it('catches errors and replies with message', async () => {
     (create as jest.Mock).mockRejectedValue(new Error('Disk error'));
     const ctx = makeCtx('/add Task');

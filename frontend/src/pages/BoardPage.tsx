@@ -83,6 +83,7 @@ export default function BoardPage() {
         {!isLoading && !error && (
           <KanbanBoard
             tasks={tasks}
+            sort={filters.sort}
             onTaskClick={handleTaskClick}
             onAddClick={handleAddClick}
           />

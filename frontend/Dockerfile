@@ -15,6 +15,7 @@ COPY shared/tsconfig.json ./shared/
 RUN cd shared && npx tsc
 
 COPY frontend/src ./frontend/src
+COPY frontend/public ./frontend/public
 COPY frontend/index.html ./frontend/
 COPY frontend/tsconfig.json ./frontend/
 COPY frontend/tsconfig.app.json ./frontend/

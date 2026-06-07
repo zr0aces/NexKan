@@ -19,7 +19,9 @@ export async function handleAdd(ctx: CommandContext<any>): Promise<void> {
     if (parsed.length > 0) {
       const dateResult = parsed[parsed.length - 1];
       due_date = format(dateResult.date(), 'yyyy-MM-dd');
-      title = text.replace(dateResult.text, '').replace(/\s+/g, ' ').trim();
+      const start = dateResult.index;
+      const end = start + dateResult.text.length;
+      title = (text.slice(0, start) + text.slice(end)).replace(/\s+/g, ' ').trim();
     }
 
     const task = await create({ title, due_date, status: 'todo', description: '' });

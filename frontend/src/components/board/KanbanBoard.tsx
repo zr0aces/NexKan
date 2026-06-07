@@ -20,11 +20,12 @@ const STATUSES = TASK_STATUSES;
 
 interface KanbanBoardProps {
   tasks: Task[];
+  sort?: string;
   onTaskClick: (task: Task) => void;
   onAddClick: (status: TaskStatus) => void;
 }
 
-export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps) {
+export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAddClick }: KanbanBoardProps) {
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [dragError, setDragError] = useState<string | null>(null);
   const [activeColumn, setActiveColumn] = useState<TaskStatus>('todo');
@@ -44,9 +45,14 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
   }, [tasks, isDragging]);
 
   const getColumnTasks = useCallback(
-    (status: TaskStatus) =>
-      localTasks.filter(t => t.status === status).sort((a, b) => a.sort_order - b.sort_order),
-    [localTasks]
+    (status: TaskStatus) => {
+      const filtered = localTasks.filter(t => t.status === status);
+      if (sort === 'sort_order:asc') {
+        return filtered.sort((a, b) => a.sort_order - b.sort_order);
+      }
+      return filtered;
+    },
+    [localTasks, sort]
   );
 
   function handleDragStart(_event: DragStartEvent) {
@@ -103,6 +109,10 @@ export function KanbanBoard({ tasks, onTaskClick, onAddClick }: KanbanBoardProps
       }
 
       if (overTask && overTask.id !== activeTask.id && overTask.status === activeTask.status) {
+        if (sort !== 'sort_order:asc') {
+          setLocalTasks(tasks);
+          return;
+        }
         const columnTasks = getColumnTasks(activeTask.status);
         const newPosition = columnTasks.findIndex(t => t.id === overTask.id);
         if (newPosition === -1) return;
