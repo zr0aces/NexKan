@@ -6,6 +6,7 @@ backend/data/notifications-sent.json
 *.env.local
 data/
 frontend/dist/
+tsconfig.tsbuildinfo
 
 # Agent memory and rules
 AGENT.md
