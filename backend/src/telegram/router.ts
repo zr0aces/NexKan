@@ -13,7 +13,7 @@ import { handleNote } from './commands/note';
 import { handleNotes } from './commands/notes';
 import { handleDelnote } from './commands/delnote';
 import { handleCallback } from './callbacks';
-import { webhookCallback } from 'grammy';
+import { webhookCallback, BotError } from 'grammy';
 import { isAuthorizedChat } from './utils';
 
 export const telegramRouter = Router();
@@ -23,6 +23,19 @@ telegramRouter.post('/webhooks/telegram', webhookAuth, async (req: Request, res:
     await webhookCallback(getBot(), 'express')(req, res);
   } catch (err) {
     console.error('Webhook error:', err);
+    try {
+      const chatId = process.env.TELEGRAM_CHAT_ID;
+      if (chatId) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        await getBot().api.sendMessage(
+          chatId,
+          `⚠️ **Webhook Delivery Error:**\n\`${errMsg}\``,
+          { parse_mode: 'Markdown' }
+        ).catch(() => {});
+      }
+    } catch (sendErr) {
+      console.error('Failed to send webhook error notification to Telegram:', sendErr);
+    }
     if (!res.headersSent) res.sendStatus(200);
   }
 });
@@ -60,6 +73,23 @@ telegramRouter.post('/telegram/test', async (_req: Request, res: Response) => {
 
 export function setupBotCommands(): void {
   const bot = getBot();
+
+  bot.catch(async (err) => {
+    console.error(`Error while handling update ${err.ctx.update.update_id}:`, err.error);
+    try {
+      const chatId = process.env.TELEGRAM_CHAT_ID;
+      if (chatId) {
+        const errMsg = err.error instanceof Error ? err.error.message : String(err.error);
+        await err.ctx.api.sendMessage(
+          chatId,
+          `⚠️ **NexKan Error:**\n\`${errMsg}\``,
+          { parse_mode: 'Markdown' }
+        ).catch(() => {});
+      }
+    } catch (sendErr) {
+      console.error('Failed to send error notification to Telegram:', sendErr);
+    }
+  });
 
   // Centralized authorization middleware
   bot.use(async (ctx, next) => {

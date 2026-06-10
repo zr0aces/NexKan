@@ -4,7 +4,7 @@ import { noteRouter } from './scratchpad/router';
 import { telegramRouter } from './telegram/router';
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 app.use('/api/tasks', taskRouter);
 app.use('/api/notes', noteRouter);
 app.use('/api', telegramRouter);

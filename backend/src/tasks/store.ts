@@ -287,16 +287,21 @@ export async function update(id: string, input: UpdateTaskInput): Promise<Task> 
   }
 
   let finalFilePath = filePath;
+  let oldFilePathToDelete: string | null = null;
   if (input.title !== undefined && input.title !== task.title) {
     const dir = getDir();
     const newFilename = `${id}-${toSlug(input.title)}.md`;
     finalFilePath = path.join(dir, newFilename);
-    try {
-      await fs.promises.unlink(filePath);
-    } catch {}
+    oldFilePathToDelete = filePath;
   }
 
   await fs.promises.writeFile(finalFilePath, serializeTask(updated));
+
+  if (oldFilePathToDelete) {
+    try {
+      await fs.promises.unlink(oldFilePathToDelete);
+    } catch {}
+  }
 
   const inst = await ensureCacheLoaded();
   inst.cache.set(id, { task: updated, filePath: finalFilePath });

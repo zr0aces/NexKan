@@ -39,14 +39,20 @@ export function TaskCard({ task, today, onClick }: TaskCardProps) {
       onClick={onClick}
     >
       <div className="flex items-start gap-2">
-        <button
-          className="mt-0.5 text-muted-foreground hover:text-foreground cursor-grab"
+        <div
+          aria-label="Drag handle"
+          className="mt-0.5 text-muted-foreground hover:text-foreground cursor-grab focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
           {...attributes}
           {...listeners}
           onClick={e => e.stopPropagation()}
+          onKeyDown={e => {
+            if (e.key === ' ' || e.key === 'Enter') {
+              e.stopPropagation();
+            }
+          }}
         >
           <GripVertical className="h-4 w-4" />
-        </button>
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm truncate">{task.title}</span>

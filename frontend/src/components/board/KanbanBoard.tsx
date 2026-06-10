@@ -64,7 +64,9 @@ export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAdd
     const activeTask = localTasks.find(t => t.id === active.id);
     if (!activeTask) return;
 
-    const overStatus = STATUSES.find(s => s === over.id);
+    const overStatus = STATUSES.find(s => s === over.id)
+      || localTasks.find(t => t.id === over.id)?.status;
+
     if (overStatus && activeTask.status !== overStatus) {
       setLocalTasks(prev => prev.map(t =>
         t.id === activeTask.id ? { ...t, status: overStatus } : t
@@ -83,43 +85,57 @@ export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAdd
       const activeTask = localTasks.find(t => t.id === active.id);
       if (!activeTask) return;
 
-      const overStatus = STATUSES.find(s => s === over.id);
-      const overTask = localTasks.find(t => t.id === over.id);
-
-      if (overStatus && activeTask.status !== overStatus) {
-        const originalTask = tasks.find(t => t.id === active.id);
-        if (!originalTask) {
-          setLocalTasks(tasks);
-          return;
-        }
-        if (originalTask.status !== overStatus) {
-          try {
-            await updateStatus.mutateAsync({ id: activeTask.id, status: overStatus });
-          } catch (err) {
-            setLocalTasks(tasks);
-            const msg =
-              err instanceof Error && err.message.includes('due_date')
-                ? 'Set a due date before moving to this column.'
-                : 'Failed to move task.';
-            setDragError(msg);
-            setTimeout(() => setDragError(null), 3000);
-          }
-        }
+      const originalTask = tasks.find(t => t.id === active.id);
+      if (!originalTask) {
+        setLocalTasks(tasks);
         return;
       }
 
-      if (overTask && overTask.id !== activeTask.id && overTask.status === activeTask.status) {
-        if (sort !== 'sort_order:asc') {
-          setLocalTasks(tasks);
-          return;
-        }
-        const columnTasks = getColumnTasks(activeTask.status);
-        const newPosition = columnTasks.findIndex(t => t.id === overTask.id);
-        if (newPosition === -1) return;
+      const overStatus = STATUSES.find(s => s === over.id);
+      const overTask = localTasks.find(t => t.id === over.id);
+
+      const targetStatus = overStatus ?? overTask?.status;
+      if (!targetStatus) {
+        setLocalTasks(tasks);
+        return;
+      }
+
+      if (originalTask.status !== targetStatus) {
+        // Status changed!
         try {
-          await updateOrder.mutateAsync({ id: activeTask.id, position: newPosition });
-        } catch {
+          await updateStatus.mutateAsync({ id: activeTask.id, status: targetStatus });
+          // If dropped on a specific task card, we also need to update the order in the target column
+          if (overTask && overTask.id !== activeTask.id && sort === 'sort_order:asc') {
+            const columnTasks = getColumnTasks(targetStatus);
+            const newPosition = columnTasks.findIndex(t => t.id === overTask.id);
+            if (newPosition !== -1) {
+              await updateOrder.mutateAsync({ id: activeTask.id, position: newPosition });
+            }
+          }
+        } catch (err) {
           setLocalTasks(tasks);
+          const msg =
+            err instanceof Error && err.message.includes('due_date')
+              ? 'Set a due date before moving to this column.'
+              : 'Failed to move task.';
+          setDragError(msg);
+          setTimeout(() => setDragError(null), 3000);
+        }
+      } else {
+        // Status did not change, check if order changed within the same column
+        if (overTask && overTask.id !== activeTask.id) {
+          if (sort !== 'sort_order:asc') {
+            setLocalTasks(tasks);
+            return;
+          }
+          const columnTasks = getColumnTasks(activeTask.status);
+          const newPosition = columnTasks.findIndex(t => t.id === overTask.id);
+          if (newPosition === -1) return;
+          try {
+            await updateOrder.mutateAsync({ id: activeTask.id, position: newPosition });
+          } catch {
+            setLocalTasks(tasks);
+          }
         }
       }
     } finally {
