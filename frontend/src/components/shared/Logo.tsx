@@ -9,30 +9,56 @@ export function Logo({ className = "h-6 w-6", size }: LogoProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
+      viewBox="0 0 512 512"
       fill="none"
       className={className}
       style={style}
     >
-      {/* Frame/container (dark gray outline, rounded) */}
+      <defs>
+        {/* Card Cutout Mask for Paper Airplane */}
+        <mask id="airplane-mask" maskUnits="userSpaceOnUse">
+          <rect x="228" y="150" width="80" height="110" rx="8" fill="white" />
+          <g transform="translate(268, 205) rotate(60)">
+            <path d="M 0,-20 L 16,14 L 0,6 L -16,14 Z" fill="black" />
+          </g>
+        </mask>
+      </defs>
+
+      {/* Spiral Notebook Page Frame */}
+      <rect x="108" y="64" width="320" height="384" rx="24" stroke="currentColor" strokeWidth="16" />
+
+      {/* Spiral Loops on Left Edge */}
+      <rect x="88" y="104" width="36" height="16" rx="8" fill="currentColor" />
+      <rect x="88" y="172" width="36" height="16" rx="8" fill="currentColor" />
+      <rect x="88" y="240" width="36" height="16" rx="8" fill="currentColor" />
+      <rect x="88" y="308" width="36" height="16" rx="8" fill="currentColor" />
+      <rect x="88" y="376" width="36" height="16" rx="8" fill="currentColor" />
+
+      {/* Column 1 (Todo) Cards */}
+      <rect x="132" y="112" width="80" height="70" rx="8" fill="currentColor" opacity="0.15" />
+      <rect x="132" y="198" width="80" height="70" rx="8" fill="currentColor" opacity="0.15" />
+
+      {/* Column 2 (In Progress) Active Orange Card with cutout and slide animation */}
       <rect
-        x="20"
-        y="22"
-        width="65"
-        height="56"
-        rx="6"
+        x="228"
+        y="150"
+        width="80"
+        height="110"
+        rx="8"
+        fill="#FF6B00"
+        mask="url(#airplane-mask)"
+        className="animate-logo-slide"
+      />
+
+      {/* Column 3 (Done) Completed Card with checkmark */}
+      <rect x="324" y="220" width="80" height="80" rx="8" fill="currentColor" opacity="0.15" />
+      <path
+        d="M 352,260 L 360,268 L 376,252"
         stroke="currentColor"
         strokeWidth="6"
-      />
-      {/* Sliding orange card with keyframe animation */}
-      <rect
-        x="12"
-        y="33"
-        width="48"
-        height="34"
-        rx="4"
-        fill="#f97316"
-        className="animate-logo-slide"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.4"
       />
     </svg>
   );

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 512" fill="none">
+  <defs>
+    <!-- Card Cutout Mask for Paper Airplane -->
+    <mask id="airplane-mask" maskUnits="userSpaceOnUse">
+      <rect x="228" y="150" width="80" height="110" rx="8" fill="white" />
+      <g transform="translate(268, 205) rotate(60)">
+        <path d="M 0,-20 L 16,14 L 0,6 L -16,14 Z" fill="black" />
+      </g>
+    </mask>
+  </defs>
+  
+  <!-- Embedded Icon component -->
+  <g transform="translate(64, 64) scale(0.75)">
+    <!-- Spiral Notebook Page Frame -->
+    <rect x="108" y="64" width="320" height="384" rx="24" stroke="#F1F5F9" stroke-width="16" />
+    
+    <!-- Spiral Loops on Left Edge -->
+    <rect x="88" y="104" width="36" height="16" rx="8" fill="#F1F5F9" />
+    <rect x="88" y="172" width="36" height="16" rx="8" fill="#F1F5F9" />
+    <rect x="88" y="240" width="36" height="16" rx="8" fill="#F1F5F9" />
+    <rect x="88" y="308" width="36" height="16" rx="8" fill="#F1F5F9" />
+    <rect x="88" y="376" width="36" height="16" rx="8" fill="#F1F5F9" />
+    
+    <!-- Column 1 (Todo) Cards -->
+    <rect x="132" y="112" width="80" height="70" rx="8" fill="#F1F5F9" opacity="0.15" />
+    <rect x="132" y="198" width="80" height="70" rx="8" fill="#F1F5F9" opacity="0.15" />
+    
+    <!-- Column 2 (In Progress) Active Orange Card with cutout -->
+    <rect x="228" y="150" width="80" height="110" rx="8" fill="#FF6B00" mask="url(#airplane-mask)" />
+    
+    <!-- Column 3 (Done) Completed Card with checkmark -->
+    <rect x="324" y="220" width="80" height="80" rx="8" fill="#F1F5F9" opacity="0.15" />
+    <path d="M 352,260 L 360,268 L 376,252" stroke="#F1F5F9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.4" />
+  </g>
+  
+  <!-- Typography -->
+  <text x="512" y="256" font-family="'Inter', 'Prompt', 'Kanit', -apple-system, sans-serif" font-weight="900" font-size="240" dominant-baseline="central">
+    <tspan fill="#F1F5F9">Nex</tspan><tspan fill="#FF6B00">Kan</tspan>
+  </text>
+</svg>
