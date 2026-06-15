@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Task, formatDate, isOverdue } from '@nexkan/shared';
@@ -10,10 +11,10 @@ import { cn } from '@/lib/utils';
 interface TaskCardProps {
   task: Task;
   today: Date;
-  onClick?: () => void;
+  onClick?: (task: Task) => void;
 }
 
-export function TaskCard({ task, today, onClick }: TaskCardProps) {
+export const TaskCard = memo(function TaskCard({ task, today, onClick }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { task },
@@ -27,6 +28,10 @@ export function TaskCard({ task, today, onClick }: TaskCardProps) {
 
   const overdue = task.due_date ? isOverdue(task.due_date, task.status, today) : false;
 
+  const handleClick = useCallback(() => {
+    onClick?.(task);
+  }, [onClick, task]);
+
   return (
     <div
       ref={setNodeRef}
@@ -36,8 +41,9 @@ export function TaskCard({ task, today, onClick }: TaskCardProps) {
         overdue && 'border-destructive bg-destructive/10',
         isDragging && 'shadow-lg'
       )}
-      onClick={onClick}
+      onClick={handleClick}
     >
+
       <div className="flex items-start gap-2">
         <div
           aria-label="Drag handle"
@@ -76,4 +82,5 @@ export function TaskCard({ task, today, onClick }: TaskCardProps) {
       </div>
     </div>
   );
-}
+});
+

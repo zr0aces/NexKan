@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, memo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { TaskFilters } from '@nexkan/shared';
@@ -7,7 +8,33 @@ interface FilterBarProps {
   onFiltersChange: (filters: TaskFilters) => void;
 }
 
-export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
+export const FilterBar = memo(function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
+  const [search, setSearch] = useState(filters.search ?? '');
+
+  // Ref to hold the latest filters object so that the debounce effect
+  // does not re-trigger when other filter values (like priority or sort) change.
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  // Synchronize local search state with parent filters.search (e.g. if cleared)
+  useEffect(() => {
+    setSearch(filters.search ?? '');
+  }, [filters.search]);
+
+  // Debounced search logic
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentFilters = filtersRef.current;
+      if (search !== (currentFilters.search ?? '')) {
+        onFiltersChange({ ...currentFilters, search: search || undefined });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search, onFiltersChange]);
+
   return (
     <div className="flex gap-2 items-center flex-wrap">
       <div className="relative flex-1 max-w-sm">
@@ -15,10 +42,11 @@ export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
         <Input
           placeholder="Search tasks..."
           className="pl-9"
-          value={filters.search ?? ''}
-          onChange={e => onFiltersChange({ ...filters, search: e.target.value || undefined })}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
         />
       </div>
+
 
       <select
         className="h-9 rounded-md border border-input bg-background px-3 text-sm"
@@ -45,4 +73,5 @@ export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
       </select>
     </div>
   );
-}
+});
+

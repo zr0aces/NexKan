@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, memo } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -25,7 +25,7 @@ interface KanbanBoardProps {
   onAddClick: (status: TaskStatus) => void;
 }
 
-export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAddClick }: KanbanBoardProps) {
+export const KanbanBoard = memo(function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAddClick }: KanbanBoardProps) {
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [dragError, setDragError] = useState<string | null>(null);
   const [activeColumn, setActiveColumn] = useState<TaskStatus>('todo');
@@ -44,16 +44,25 @@ export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAdd
     }
   }, [tasks, isDragging]);
 
-  const getColumnTasks = useCallback(
-    (status: TaskStatus) => {
-      const filtered = localTasks.filter(t => t.status === status);
-      if (sort === 'sort_order:asc') {
-        return filtered.sort((a, b) => a.sort_order - b.sort_order);
+  const columnsTasks = useMemo(() => {
+    const groups: Record<TaskStatus, Task[]> = {
+      todo: [],
+      'in-progress': [],
+      done: [],
+    };
+    localTasks.forEach(t => {
+      if (groups[t.status]) {
+        groups[t.status].push(t);
       }
-      return filtered;
-    },
-    [localTasks, sort]
-  );
+    });
+    if (sort === 'sort_order:asc') {
+      groups.todo.sort((a, b) => a.sort_order - b.sort_order);
+      groups['in-progress'].sort((a, b) => a.sort_order - b.sort_order);
+      groups.done.sort((a, b) => a.sort_order - b.sort_order);
+    }
+    return groups;
+  }, [localTasks, sort]);
+
 
   function handleDragStart(_event: DragStartEvent) {
     setIsDragging(true);
@@ -106,7 +115,7 @@ export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAdd
           await updateStatus.mutateAsync({ id: activeTask.id, status: targetStatus });
           // If dropped on a specific task card, we also need to update the order in the target column
           if (overTask && overTask.id !== activeTask.id && sort === 'sort_order:asc') {
-            const columnTasks = getColumnTasks(targetStatus);
+            const columnTasks = columnsTasks[targetStatus];
             const newPosition = columnTasks.findIndex(t => t.id === overTask.id);
             if (newPosition !== -1) {
               await updateOrder.mutateAsync({ id: activeTask.id, position: newPosition });
@@ -128,7 +137,7 @@ export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAdd
             setLocalTasks(tasks);
             return;
           }
-          const columnTasks = getColumnTasks(activeTask.status);
+          const columnTasks = columnsTasks[activeTask.status];
           const newPosition = columnTasks.findIndex(t => t.id === overTask.id);
           if (newPosition === -1) return;
           try {
@@ -151,11 +160,11 @@ export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAdd
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      {dragError && (
+      {dragError ? (
         <div className="mb-2 px-3 py-2 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-md">
           {dragError}
         </div>
-      )}
+      ) : null}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {STATUSES.map(status => (
           <div
@@ -167,7 +176,7 @@ export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAdd
           >
             <KanbanColumn
               status={status}
-              tasks={getColumnTasks(status)}
+              tasks={columnsTasks[status]}
               today={today}
               onTaskClick={onTaskClick}
               onAddClick={onAddClick}
@@ -182,4 +191,5 @@ export function KanbanBoard({ tasks, sort = 'sort_order:asc', onTaskClick, onAdd
       />
     </DndContext>
   );
-}
+});
+

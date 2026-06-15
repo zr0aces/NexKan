@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
@@ -26,7 +27,7 @@ interface KanbanColumnProps {
   onAddClick: (status: TaskStatus) => void;
 }
 
-export function KanbanColumn({ status, tasks, today, onTaskClick, onAddClick }: KanbanColumnProps) {
+export const KanbanColumn = memo(function KanbanColumn({ status, tasks, today, onTaskClick, onAddClick }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
@@ -58,10 +59,11 @@ export function KanbanColumn({ status, tasks, today, onTaskClick, onAddClick }: 
       <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-2 flex-1">
           {tasks.map(task => (
-            <TaskCard key={task.id} task={task} today={today} onClick={() => onTaskClick(task)} />
+            <TaskCard key={task.id} task={task} today={today} onClick={onTaskClick} />
           ))}
         </div>
       </SortableContext>
     </div>
   );
-}
+});
+

@@ -8,11 +8,14 @@ import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Logo } from '@/components/shared/Logo';
 import { AlertTriangle, Clock, CheckSquare, List } from 'lucide-react';
 import { startOfDay, isEqual, addDays } from 'date-fns';
-import { parseLocalDate, formatDate, isOverdue, VERSION } from '@nexkan/shared';
+import { parseLocalDate, formatDate, isOverdue, VERSION, Task } from '@nexkan/shared';
 import { ScratchpadPanel } from '@/components/scratchpad/ScratchpadPanel';
 
+const EMPTY_TASKS: Task[] = [];
+
 export default function DashboardPage() {
-  const { data: tasks = [], isLoading } = useTasks();
+  const { data: tasks = EMPTY_TASKS, isLoading } = useTasks();
+
 
   const { overdueTasks, todayTasks, tomorrowTasks, activeTasks, doneTasks, todayLabel, tomorrowLabel } = useMemo(() => {
     const t = startOfDay(new Date());

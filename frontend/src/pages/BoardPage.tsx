@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useTasks } from '@/hooks/useTasks';
@@ -11,29 +11,32 @@ import { Button } from '@/components/ui/button';
 import { Task, TaskFilters, TaskStatus, VERSION } from '@nexkan/shared';
 import { ScratchpadPanel } from '@/components/scratchpad/ScratchpadPanel';
 
+const EMPTY_TASKS: Task[] = [];
+
 export default function BoardPage() {
   const [filters, setFilters] = useState<TaskFilters>({ sort: 'sort_order:asc' });
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('todo');
 
-  const { data: tasks = [], isLoading, error, refetch } = useTasks(filters);
+  const { data: tasks = EMPTY_TASKS, isLoading, error, refetch } = useTasks(filters);
 
-  function handleTaskClick(task: Task) {
+  const handleTaskClick = useCallback((task: Task) => {
     setSelectedTask(task);
     setDialogOpen(true);
-  }
+  }, []);
 
-  function handleAddClick(status: TaskStatus) {
+  const handleAddClick = useCallback((status: TaskStatus) => {
     setSelectedTask(null);
     setDefaultStatus(status);
     setDialogOpen(true);
-  }
+  }, []);
 
-  function handleDialogClose(open: boolean) {
+  const handleDialogClose = useCallback((open: boolean) => {
     setDialogOpen(open);
     if (!open) setSelectedTask(null);
-  }
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-background">

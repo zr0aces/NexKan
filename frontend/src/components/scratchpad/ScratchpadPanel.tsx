@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { Note, TaskPriority } from '@nexkan/shared';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,10 @@ import { ConvertDialog } from './ConvertDialog';
 import { useNotes } from '@/hooks/useNotes';
 import { useCreateNote, useUpdateNote, useDeleteNote, useConvertNote } from '@/hooks/useNoteMutation';
 
+const EMPTY_NOTES: Note[] = [];
+
 export function ScratchpadPanel() {
-  const { data: notes = [], isLoading } = useNotes();
+  const { data: notes = EMPTY_NOTES, isLoading } = useNotes();
   const [convertTarget, setConvertTarget] = useState<Note | null>(null);
 
   const createNote = useCreateNote();
@@ -16,22 +18,23 @@ export function ScratchpadPanel() {
   const deleteNote = useDeleteNote();
   const convertNote = useConvertNote();
 
-  function handleAdd() {
+  const handleAdd = useCallback(() => {
     createNote.mutate('New note');
-  }
+  }, [createNote]);
 
-  function handleUpdate(id: string, content: string) {
+  const handleUpdate = useCallback((id: string, content: string) => {
     updateNote.mutate({ id, content });
-  }
+  }, [updateNote]);
 
-  function handleDelete(id: string) {
+  const handleDelete = useCallback((id: string) => {
     deleteNote.mutate(id);
-  }
+  }, [deleteNote]);
 
-  function handleConvertConfirm(id: string, due_date: string, priority?: TaskPriority) {
+  const handleConvertConfirm = useCallback((id: string, due_date: string, priority?: TaskPriority) => {
     convertNote.mutate({ id, due_date, priority, status: 'todo' });
     setConvertTarget(null);
-  }
+  }, [convertNote]);
+
 
   return (
     <div className="border-t pt-4 pb-4">
@@ -50,15 +53,15 @@ export function ScratchpadPanel() {
         </Button>
       </div>
 
-      {isLoading && (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading notes...</p>
-      )}
+      ) : null}
 
-      {!isLoading && notes.length === 0 && (
+      {!isLoading && notes.length === 0 ? (
         <p className="text-sm text-muted-foreground">No notes yet.</p>
-      )}
+      ) : null}
 
-      {!isLoading && notes.length > 0 && (
+      {!isLoading && notes.length > 0 ? (
         <div className="flex gap-3 overflow-x-auto pb-2">
           {notes.map(note => (
             <NoteCard
@@ -66,11 +69,11 @@ export function ScratchpadPanel() {
               note={note}
               onUpdate={handleUpdate}
               onDelete={handleDelete}
-              onConvert={n => setConvertTarget(n)}
+              onConvert={setConvertTarget}
             />
           ))}
         </div>
-      )}
+      ) : null}
 
       <ConvertDialog
         note={convertTarget}

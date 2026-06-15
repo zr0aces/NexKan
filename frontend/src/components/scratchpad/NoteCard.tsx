@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Trash2, ArrowRightCircle } from 'lucide-react';
 import { Note } from '@nexkan/shared';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ interface NoteCardProps {
   onConvert: (note: Note) => void;
 }
 
-export function NoteCard({ note, onUpdate, onDelete, onConvert }: NoteCardProps) {
+export const NoteCard = memo(function NoteCard({ note, onUpdate, onDelete, onConvert }: NoteCardProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(note.content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -71,4 +71,5 @@ export function NoteCard({ note, onUpdate, onDelete, onConvert }: NoteCardProps)
       </div>
     </div>
   );
-}
+});
+
