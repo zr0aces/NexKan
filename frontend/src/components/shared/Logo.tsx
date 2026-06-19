@@ -17,49 +17,68 @@ export function Logo({ className = "h-6 w-6", size }: LogoProps) {
       <defs>
         {/* Card Cutout Mask for Paper Airplane */}
         <mask id="airplane-mask" maskUnits="userSpaceOnUse">
-          <rect x="228" y="150" width="80" height="110" rx="8" fill="white" />
-          <g transform="translate(268, 205) rotate(60)">
-            <path d="M 0,-20 L 16,14 L 0,6 L -16,14 Z" fill="black" />
+          {/* White card base */}
+          <rect x={224} y={144} width={80} height={120} rx={10} fill="white" />
+          {/* Black cutout for paper airplane */}
+          <g transform="translate(264, 204) rotate(45)">
+            <path d="M 0,-22 L 18,14 L 0,5 L -18,14 Z" fill="black" />
+            <line x1="0" y1="-22" x2="0" y2="5" stroke="white" strokeWidth={2} strokeLinecap="round" />
           </g>
         </mask>
+        
+        {/* Gradient for active card */}
+        <linearGradient id="brand-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FF9E00" />
+          <stop offset="100%" stopColor="#FF3D00" />
+        </linearGradient>
       </defs>
 
-      {/* Spiral Notebook Page Frame */}
-      <rect x="108" y="64" width="320" height="384" rx="24" stroke="currentColor" strokeWidth="16" />
+      {/* Spiral Notebook Page Frame (filled with themed secondary background for clean contrast in light and dark mode) */}
+      <rect x={108} y={64} width={320} height={384} rx={24} fill="hsl(var(--secondary))" stroke="currentColor" strokeWidth={16} />
 
       {/* Spiral Loops on Left Edge */}
-      <rect x="88" y="104" width="36" height="16" rx="8" fill="currentColor" />
-      <rect x="88" y="172" width="36" height="16" rx="8" fill="currentColor" />
-      <rect x="88" y="240" width="36" height="16" rx="8" fill="currentColor" />
-      <rect x="88" y="308" width="36" height="16" rx="8" fill="currentColor" />
-      <rect x="88" y="376" width="36" height="16" rx="8" fill="currentColor" />
+      <path d="M 124,106 C 88,106 88,118 124,118" stroke="currentColor" strokeWidth={8} strokeLinecap="round" />
+      <path d="M 124,174 C 88,174 88,186 124,186" stroke="currentColor" strokeWidth={8} strokeLinecap="round" />
+      <path d="M 124,242 C 88,242 88,254 124,254" stroke="currentColor" strokeWidth={8} strokeLinecap="round" />
+      <path d="M 124,310 C 88,310 88,322 124,322" stroke="currentColor" strokeWidth={8} strokeLinecap="round" />
+      <path d="M 124,378 C 88,378 88,390 124,390" stroke="currentColor" strokeWidth={8} strokeLinecap="round" />
 
-      {/* Column 1 (Todo) Cards */}
-      <rect x="132" y="112" width="80" height="70" rx="8" fill="currentColor" opacity="0.15" />
-      <rect x="132" y="198" width="80" height="70" rx="8" fill="currentColor" opacity="0.15" />
+      {/* Punch Holes */}
+      <circle cx={124} cy={112} r={4} fill="currentColor" opacity={0.4} />
+      <circle cx={124} cy={180} r={4} fill="currentColor" opacity={0.4} />
+      <circle cx={124} cy={248} r={4} fill="currentColor" opacity={0.4} />
+      <circle cx={124} cy={316} r={4} fill="currentColor" opacity={0.4} />
+      <circle cx={124} cy={384} r={4} fill="currentColor" opacity={0.4} />
 
-      {/* Column 2 (In Progress) Active Orange Card with cutout and slide animation */}
+      {/* Column 1 (Todo) Cards (high visibility borders and fills) */}
+      <rect x={136} y={104} width={76} height={64} rx={8} fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth={2} strokeOpacity={0.35} />
+      <rect x={136} y={184} width={76} height={64} rx={8} fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth={2} strokeOpacity={0.35} />
+      <rect x={136} y={264} width={76} height={64} rx={8} fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth={2} strokeOpacity={0.35} />
+
+      {/* Column 2 (In Progress) Cards */}
+      <rect x={224} y={280} width={76} height={64} rx={8} fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth={2} strokeOpacity={0.35} />
+      {/* Active Orange Card with cutout and slide animation */}
       <rect
-        x="228"
-        y="150"
-        width="80"
-        height="110"
-        rx="8"
-        fill="#FF6B00"
+        x={224}
+        y={144}
+        width={80}
+        height={120}
+        rx={10}
+        fill="url(#brand-grad)"
         mask="url(#airplane-mask)"
         className="animate-logo-slide"
       />
 
-      {/* Column 3 (Done) Completed Card with checkmark */}
-      <rect x="324" y="220" width="80" height="80" rx="8" fill="currentColor" opacity="0.15" />
-      <path
-        d="M 352,260 L 360,268 L 376,252"
-        stroke="currentColor"
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.4"
-      />
+      {/* Column 3 (Done) Cards */}
+      <rect x={316} y={104} width={76} height={64} rx={8} fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth={2} strokeOpacity={0.35} />
+      <rect x={316} y={280} width={76} height={64} rx={8} fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth={2} strokeOpacity={0.35} />
+
+      {/* Completed Card with checkmark badge */}
+      <g>
+        <rect x={316} y={184} width={76} height={80} rx={8} fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth={2} strokeOpacity={0.35} />
+        <circle cx={354} cy={224} r={14} fill="#10B981" />
+        <path d="M 347,224 L 352,229 L 361,219" stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+      </g>
     </svg>
   );
 }
