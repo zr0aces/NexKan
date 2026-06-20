@@ -30,8 +30,8 @@ npm install          # install all workspaces
 ./scripts/telegram-webhook.sh <cmd>       # Manage Telegram webhook (info, set, delete, set-commands)
 # Or inside Docker (production):
 docker compose exec backend node dist/scripts/telegram-webhook.js <info|set|delete|set-commands>
-node scripts/sync-version.js [version]    # Sync version to all workspaces
-node scripts/release.js [version]         # Auto-sync, build, and output git release commands
+node scripts/sync-version.mjs [version]   # Sync version to all workspaces
+node scripts/release.mjs [version]        # Auto-sync, build, and output git release commands
 ```
 
 ### Shared

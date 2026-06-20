@@ -1,6 +1,6 @@
 {
   "name": "nexkan",
-  "version": "2026.6.13",
+  "version": "2026.6.14",
   "private": true,
   "workspaces": [
     "shared",
@@ -8,7 +8,7 @@
     "frontend"
   ],
   "scripts": {
-    "sync-version": "node ./scripts/sync-version.js",
-    "release": "node ./scripts/release.js"
+    "sync-version": "node ./scripts/sync-version.mjs",
+    "release": "node ./scripts/release.mjs"
   }
 }

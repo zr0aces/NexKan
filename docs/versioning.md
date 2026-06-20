@@ -18,17 +18,18 @@ NexKan uses Calendar Versioning (**CalVer**) with the scheme `YYYY.M.PATCH`.
 
 ## Storing and Syncing Versions
 
-The **single source of truth** for the version is the root `package.json` file.
+The **single source of truth** for the version is the root [VERSION](file:///home/san/workspace/NexKan/VERSION) file.
 
-To sync version metadata across all workspace components, use [sync-version.js](file:///home/san/workspace/NexKan/scripts/sync-version.js):
+To sync version metadata across all workspace components, use [sync-version.mjs](file:///home/san/workspace/NexKan/scripts/sync-version.mjs):
 
 ```bash
-node scripts/sync-version.js [VERSION]
+node scripts/sync-version.mjs [--check]
 ```
 
 ### What this script does:
-1. Sets the version in the root `package.json`.
+1. Reads the version from the root `VERSION` file.
 2. Propagates the version to all monorepo workspaces:
+   - root `package.json`
    - `backend/package.json`
    - `frontend/package.json`
    - `shared/package.json`
@@ -36,19 +37,22 @@ node scripts/sync-version.js [VERSION]
 4. Writes the version dynamically to a shared TypeScript module ([version.ts](file:///home/san/workspace/NexKan/shared/src/lib/version.ts)), which is imported by both the frontend and backend.
 5. Automatically recompiles the shared workspace (`@nexkan/shared`) so dependent workspaces receive the updated modules instantly.
 
-*Note: If no `[VERSION]` argument is provided, `sync-version.js` auto-calculates the next version based on today's calendar date and the current package version.*
+*Note: You can pass `--check` to verify that all package files are currently in sync with the `VERSION` file (used as a CI gate).*
 
 ---
 
 ## Preparing a Release
 
-To prepare a new release, run [release.js](file:///home/san/workspace/NexKan/scripts/release.js):
+To prepare a new release, run [release.mjs](file:///home/san/workspace/NexKan/scripts/release.mjs):
 
 ```bash
-node scripts/release.js [VERSION]
+node scripts/release.mjs [VERSION] [--tag] [--build]
 ```
 
 ### What this script does:
-1. Invokes `sync-version.js` to update and build all package versions.
-2. Detects the current active Git branch (using `git branch --show-current`).
-3. Prints the exact, branch-aware Git commands to stage, commit, tag, and push the release safely without triggering syntax errors in Bash.
+1. Auto-calculates the next version based on today's calendar date (bumping patch/minor, resetting to `1` on month change) or validates the provided `[VERSION]` argument.
+2. Updates the root `VERSION` file.
+3. Invokes `sync-version.mjs` to update and build all package versions.
+4. Optionally builds version-tagged Docker compose images (`--build`).
+5. Optionally stages, commits, and tags the release in Git (`--tag`).
+6. Detects the current active Git branch and prints the exact commands to push the release safely.
