@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, ChevronLeft, ChevronUp } from 'lucide-react';
 import { useTasks } from '@/hooks/useTasks';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { TaskDialog } from '@/components/task/TaskDialog';
@@ -18,6 +18,15 @@ export default function BoardPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('todo');
+
+  const [isScratchpadOpen, setIsScratchpadOpen] = useState<boolean>(() => {
+    const saved = localStorage.getItem('nexkan:scratchpad-open');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('nexkan:scratchpad-open', String(isScratchpadOpen));
+  }, [isScratchpadOpen]);
 
   const { data: tasks = EMPTY_TASKS, isLoading, error, refetch } = useTasks(filters);
 
@@ -70,29 +79,62 @@ export default function BoardPage() {
         </div>
       </header>
 
-      <main className="max-w-screen-2xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 pb-16 md:pb-4 space-y-4">
-        <FilterBar filters={filters} onFiltersChange={setFilters} />
+      <main className="max-w-screen-2xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 pb-16 md:pb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+          <div className={isScratchpadOpen ? 'lg:col-span-3 space-y-4' : 'lg:col-span-4 space-y-4'}>
+            <FilterBar filters={filters} onFiltersChange={setFilters} />
 
-        {isLoading && (
-          <div className="text-center py-12 text-muted-foreground">Loading tasks...</div>
-        )}
+            {isLoading && (
+              <div className="text-center py-12 text-muted-foreground">Loading tasks...</div>
+            )}
 
-        {error && (
-          <div className="text-center py-12 text-destructive">
-            Failed to load tasks. Is the backend running?
+            {error && (
+              <div className="text-center py-12 text-destructive">
+                Failed to load tasks. Is the backend running?
+              </div>
+            )}
+
+            {!isLoading && !error && (
+              <KanbanBoard
+                tasks={tasks}
+                sort={filters.sort}
+                onTaskClick={handleTaskClick}
+                onAddClick={handleAddClick}
+              />
+            )}
           </div>
-        )}
 
-        {!isLoading && !error && (
-          <KanbanBoard
-            tasks={tasks}
-            sort={filters.sort}
-            onTaskClick={handleTaskClick}
-            onAddClick={handleAddClick}
-          />
-        )}
+          {isScratchpadOpen && (
+            <div className="lg:col-span-1 lg:sticky lg:top-20">
+              <ScratchpadPanel isOpen={isScratchpadOpen} onToggle={() => setIsScratchpadOpen(false)} />
+            </div>
+          )}
+        </div>
 
-        <ScratchpadPanel />
+        {!isScratchpadOpen && (
+          <>
+            {/* Desktop Sticky Tab */}
+            <button
+              onClick={() => setIsScratchpadOpen(true)}
+              className="fixed right-0 top-1/2 -translate-y-1/2 bg-yellow-50 dark:bg-yellow-950 border border-r-0 border-yellow-200 dark:border-yellow-800 rounded-l-lg py-4 px-2 shadow-md cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900 transition-all duration-200 flex flex-col items-center gap-2 group z-50 hidden lg:flex"
+              title="Show Scratchpad"
+            >
+              <ChevronLeft className="h-4 w-4 text-yellow-800 dark:text-yellow-200 group-hover:-translate-x-0.5 transition-transform" />
+              <span className="[writing-mode:vertical-rl] text-xs font-bold tracking-widest text-yellow-800 dark:text-yellow-200 uppercase select-none">
+                Scratchpad
+              </span>
+            </button>
+
+            {/* Mobile Floating Action Button */}
+            <button
+              onClick={() => setIsScratchpadOpen(true)}
+              className="fixed bottom-6 right-6 bg-yellow-100 dark:bg-yellow-950 border border-yellow-300 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 h-12 w-12 rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-all z-50 flex lg:hidden animate-in fade-in zoom-in duration-200"
+              title="Show Scratchpad"
+            >
+              <ChevronUp className="h-6 w-6 text-yellow-800 dark:text-yellow-200" />
+            </button>
+          </>
+        )}
       </main>
 
       <TaskDialog

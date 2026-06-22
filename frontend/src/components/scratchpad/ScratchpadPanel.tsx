@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronRight } from 'lucide-react';
 import { Note, TaskPriority } from '@nexkan/shared';
 import { Button } from '@/components/ui/button';
 import { NoteCard } from './NoteCard';
@@ -9,7 +9,12 @@ import { useCreateNote, useUpdateNote, useDeleteNote, useConvertNote } from '@/h
 
 const EMPTY_NOTES: Note[] = [];
 
-export function ScratchpadPanel() {
+interface ScratchpadPanelProps {
+  isOpen?: boolean;
+  onToggle?: () => void;
+}
+
+export function ScratchpadPanel({ isOpen = true, onToggle }: ScratchpadPanelProps) {
   const { data: notes = EMPTY_NOTES, isLoading } = useNotes();
   const [convertTarget, setConvertTarget] = useState<Note | null>(null);
 
@@ -37,11 +42,37 @@ export function ScratchpadPanel() {
 
 
   return (
-    <div className="border-t pt-4 pb-4">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Scratchpad
-        </h2>
+    <div className="border-t lg:border-t-0 lg:border-l lg:pl-6 border-border pt-4 lg:pt-0 pb-4 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-3 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          {onToggle && (
+            <>
+              {/* Desktop Chevron (collapse to right) */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 hover:bg-accent hidden lg:flex items-center justify-center rounded-md p-0"
+                onClick={onToggle}
+                title="Hide Scratchpad"
+              >
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              {/* Mobile Chevron (collapse down) */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 hover:bg-accent flex lg:hidden items-center justify-center rounded-md p-0"
+                onClick={onToggle}
+                title="Hide Scratchpad"
+              >
+                <ChevronRight className="rotate-90 h-4 w-4 text-muted-foreground" />
+              </Button>
+            </>
+          )}
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Scratchpad
+          </h2>
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -62,7 +93,7 @@ export function ScratchpadPanel() {
       ) : null}
 
       {!isLoading && notes.length > 0 ? (
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto pb-2 lg:pb-0 lg:max-h-[calc(100vh-14rem)] pr-1">
           {notes.map(note => (
             <NoteCard
               key={note.id}

@@ -19,9 +19,15 @@ export const NoteCard = memo(function NoteCard({ note, onUpdate, onDelete, onCon
     setDraft(note.content);
   }, [note.content]);
 
+  // Adjust height of textarea dynamically to prevent layout shift and scrollbars
   useEffect(() => {
-    if (editing) textareaRef.current?.focus();
-  }, [editing]);
+    if (editing && textareaRef.current) {
+      const textarea = textareaRef.current;
+      textarea.focus();
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [editing, draft]);
 
   function handleBlur() {
     setEditing(false);
@@ -32,18 +38,18 @@ export const NoteCard = memo(function NoteCard({ note, onUpdate, onDelete, onCon
   }
 
   return (
-    <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-2.5 sm:p-3 w-48 sm:w-52 flex-shrink-0 flex flex-col gap-2 shadow-sm">
+    <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-2.5 sm:p-3 w-48 sm:w-52 lg:w-full flex-shrink-0 flex flex-col gap-2 shadow-sm">
       {editing ? (
         <textarea
           ref={textareaRef}
-          className="w-full text-sm bg-transparent resize-none outline-none min-h-[80px]"
+          className="w-full text-sm bg-transparent resize-none outline-none min-h-[80px] p-0 m-0 border-0 focus:ring-0 focus-visible:ring-0 leading-normal font-sans overflow-hidden"
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onBlur={handleBlur}
         />
       ) : (
         <p
-          className="text-sm whitespace-pre-wrap cursor-text min-h-[80px] break-words"
+          className="text-sm whitespace-pre-wrap cursor-text min-h-[80px] break-words p-0 m-0 leading-normal font-sans"
           onClick={() => setEditing(true)}
         >
           {note.content}
