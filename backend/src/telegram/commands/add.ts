@@ -1,10 +1,10 @@
 import * as chrono from 'chrono-node';
 import { format } from 'date-fns';
-import { create } from '../../tasks/store';
+import { TaskStore } from '../../tasks/store';
 import { formatDate } from '@nexkan/shared';
 import type { CommandContext } from 'grammy';
 
-export async function handleAdd(ctx: CommandContext<any>): Promise<void> {
+export async function handleAdd(ctx: CommandContext<any>, taskStore: TaskStore): Promise<void> {
   try {
     const text: string = ctx.match?.trim() ?? '';
     if (!text) {
@@ -24,7 +24,7 @@ export async function handleAdd(ctx: CommandContext<any>): Promise<void> {
       title = (text.slice(0, start) + text.slice(end)).replace(/\s+/g, ' ').trim();
     }
 
-    const task = await create({ title, due_date, status: 'todo', description: '' });
+    const task = await taskStore.create({ title, due_date, status: 'todo', description: '' });
     await ctx.reply(`✅ Task created: ${task.title} (${task.id})${due_date ? `\nDue: ${formatDate(due_date)}` : ''}`);
   } catch (err) {
     const msg = err instanceof Error && err.message.includes('due_date')

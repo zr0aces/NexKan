@@ -1,4 +1,4 @@
-import { readAll } from '../../tasks/store';
+import { TaskStore } from '../../tasks/store';
 import { Task, formatDate } from '@nexkan/shared';
 import { escapeMd } from '../utils';
 import type { Context } from 'grammy';
@@ -9,9 +9,9 @@ function formatTask(t: Task): string {
   return `• ${escapeMd(t.title)} (${t.id})${priority}${due}`;
 }
 
-export async function handleTasks(ctx: Context): Promise<void> {
+export async function handleTasks(ctx: Context, taskStore: TaskStore): Promise<void> {
   try {
-    const tasks = await readAll({ status: 'todo,in-progress', sort: 'sort_order:asc' });
+    const tasks = await taskStore.readAll({ status: 'todo,in-progress', sort: 'sort_order:asc' });
     if (tasks.length === 0) {
       await ctx.reply('No tasks found.');
       return;

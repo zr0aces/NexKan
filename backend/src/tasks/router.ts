@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { readAll, readById, NotFoundError, create, update, updateStatus, updateOrder, deleteTask } from './store';
+import { TaskStore, NotFoundError } from './store';
 import { TaskFilters } from '@nexkan/shared';
 
 const CreateTaskSchema = z.object({
@@ -31,96 +31,100 @@ const OrderSchema = z.object({
   position: z.number().int().min(0),
 });
 
-export const taskRouter = Router();
+export function createTaskRouter(taskStore: TaskStore): Router {
+  const router = Router();
 
-taskRouter.get('/', async (req: Request, res: Response) => {
-  try {
-    const filters: TaskFilters = {
-      status: req.query.status as string | undefined,
-      tags: req.query.tags as string | undefined,
-      priority: req.query.priority as any,
-      search: req.query.search as string | undefined,
-      sort: req.query.sort as string | undefined,
-      overdue: req.query.overdue === 'true',
-      due_today: req.query.due_today === 'true',
-      due_tomorrow: req.query.due_tomorrow === 'true',
-    };
-    const tasks = await readAll(filters);
-    res.json(tasks);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-taskRouter.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const task = await readById(req.params.id);
-    if (!task) return void res.status(404).json({ error: 'Task not found' });
-    res.json(task);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-taskRouter.post('/', async (req: Request, res: Response) => {
-  const parsed = CreateTaskSchema.safeParse(req.body);
-  if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-  try {
-    const task = await create(parsed.data);
-    res.status(201).json(task);
-  } catch (err) {
-    if (err instanceof Error && err.message.includes('due_date')) {
-      return void res.status(400).json({ error: err.message });
+  router.get('/', async (req: Request, res: Response) => {
+    try {
+      const filters: TaskFilters = {
+        status: req.query.status as string | undefined,
+        tags: req.query.tags as string | undefined,
+        priority: req.query.priority as any,
+        search: req.query.search as string | undefined,
+        sort: req.query.sort as string | undefined,
+        overdue: req.query.overdue === 'true',
+        due_today: req.query.due_today === 'true',
+        due_tomorrow: req.query.due_tomorrow === 'true',
+      };
+      const tasks = await taskStore.readAll(filters);
+      res.json(tasks);
+    } catch (err) {
+      res.status(500).json({ error: 'Internal server error' });
     }
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  });
 
-taskRouter.put('/:id', async (req: Request, res: Response) => {
-  const parsed = UpdateTaskSchema.safeParse(req.body);
-  if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-  try {
-    const task = await update(req.params.id, parsed.data);
-    res.json(task);
-  } catch (err) {
-    if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-taskRouter.patch('/:id/status', async (req: Request, res: Response) => {
-  const parsed = StatusSchema.safeParse(req.body);
-  if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-  try {
-    const task = await updateStatus(req.params.id, parsed.data.status, parsed.data.due_date);
-    res.json(task);
-  } catch (err) {
-    if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-    if (err instanceof Error && err.message.includes('due_date')) {
-      return void res.status(400).json({ error: err.message });
+  router.get('/:id', async (req: Request, res: Response) => {
+    try {
+      const task = await taskStore.readById(req.params.id);
+      if (!task) return void res.status(404).json({ error: 'Task not found' });
+      res.json(task);
+    } catch (err) {
+      res.status(500).json({ error: 'Internal server error' });
     }
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  });
 
-taskRouter.patch('/:id/order', async (req: Request, res: Response) => {
-  const parsed = OrderSchema.safeParse(req.body);
-  if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-  try {
-    const task = await updateOrder(req.params.id, parsed.data.position);
-    res.json(task);
-  } catch (err) {
-    if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  router.post('/', async (req: Request, res: Response) => {
+    const parsed = CreateTaskSchema.safeParse(req.body);
+    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
+    try {
+      const task = await taskStore.create(parsed.data);
+      res.status(201).json(task);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('due_date')) {
+        return void res.status(400).json({ error: err.message });
+      }
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 
-taskRouter.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    await deleteTask(req.params.id);
-    res.status(204).send();
-  } catch (err) {
-    if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  router.put('/:id', async (req: Request, res: Response) => {
+    const parsed = UpdateTaskSchema.safeParse(req.body);
+    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
+    try {
+      const task = await taskStore.update(req.params.id, parsed.data);
+      res.json(task);
+    } catch (err) {
+      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.patch('/:id/status', async (req: Request, res: Response) => {
+    const parsed = StatusSchema.safeParse(req.body);
+    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
+    try {
+      const task = await taskStore.updateStatus(req.params.id, parsed.data.status, parsed.data.due_date);
+      res.json(task);
+    } catch (err) {
+      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      if (err instanceof Error && err.message.includes('due_date')) {
+        return void res.status(400).json({ error: err.message });
+      }
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.patch('/:id/order', async (req: Request, res: Response) => {
+    const parsed = OrderSchema.safeParse(req.body);
+    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
+    try {
+      const task = await taskStore.updateOrder(req.params.id, parsed.data.position);
+      res.json(task);
+    } catch (err) {
+      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.delete('/:id', async (req: Request, res: Response) => {
+    try {
+      await taskStore.deleteTask(req.params.id);
+      res.status(204).send();
+    } catch (err) {
+      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  return router;
+}

@@ -2,10 +2,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-jest.mock('../../src/tasks/store', () => ({
-  readAll: jest.fn(),
-}));
-
 jest.mock('../../src/telegram/bot', () => ({
   getBot: jest.fn().mockReturnValue({
     api: {
@@ -14,12 +10,15 @@ jest.mock('../../src/telegram/bot', () => ({
   }),
 }));
 
-import { readAll } from '../../src/tasks/store';
 import { getBot } from '../../src/telegram/bot';
 import { checkAndNotify } from '../../src/telegram/notifier';
 import { Task } from '@nexkan/shared';
 
 let tmpFile: string;
+
+const mockTaskStore = {
+  readAll: jest.fn(),
+} as any;
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -47,10 +46,10 @@ afterEach(() => {
 
 describe('checkAndNotify', () => {
   it('sends overdue notification for task with past due_date', async () => {
-    (readAll as jest.Mock).mockResolvedValue([
+    mockTaskStore.readAll.mockResolvedValue([
       makeTask({ id: 'abc12345', title: 'Old Task', due_date: '2020-01-01', status: 'todo' }),
     ]);
-    await checkAndNotify();
+    await checkAndNotify(mockTaskStore);
     expect(getBot().api.sendMessage).toHaveBeenCalledWith(
       '123456',
       expect.stringContaining('Overdue'),
@@ -59,27 +58,27 @@ describe('checkAndNotify', () => {
   });
 
   it('does not send duplicate notifications', async () => {
-    (readAll as jest.Mock).mockResolvedValue([
+    mockTaskStore.readAll.mockResolvedValue([
       makeTask({ id: 'abc12345', title: 'Old Task', due_date: '2020-01-01', status: 'todo' }),
     ]);
-    await checkAndNotify();
-    await checkAndNotify();
+    await checkAndNotify(mockTaskStore);
+    await checkAndNotify(mockTaskStore);
     expect(getBot().api.sendMessage).toHaveBeenCalledTimes(1);
   });
 
   it('skips done tasks', async () => {
-    (readAll as jest.Mock).mockResolvedValue([
+    mockTaskStore.readAll.mockResolvedValue([
       makeTask({ id: 'abc12345', due_date: '2020-01-01', status: 'done' }),
     ]);
-    await checkAndNotify();
+    await checkAndNotify(mockTaskStore);
     expect(getBot().api.sendMessage).not.toHaveBeenCalled();
   });
 
   it('skips tasks without due_date', async () => {
-    (readAll as jest.Mock).mockResolvedValue([
+    mockTaskStore.readAll.mockResolvedValue([
       makeTask({ id: 'abc12345', due_date: undefined }),
     ]);
-    await checkAndNotify();
+    await checkAndNotify(mockTaskStore);
     expect(getBot().api.sendMessage).not.toHaveBeenCalled();
   });
 
@@ -95,11 +94,11 @@ describe('checkAndNotify', () => {
     };
     fs.writeFileSync(tmpFile, JSON.stringify(initialSent, null, 2));
 
-    (readAll as jest.Mock).mockResolvedValue([
+    mockTaskStore.readAll.mockResolvedValue([
       makeTask({ id: 'abc12345', due_date: '2020-01-01', status: 'todo' }),
     ]);
 
-    await checkAndNotify();
+    await checkAndNotify(mockTaskStore);
 
     const saved = JSON.parse(fs.readFileSync(tmpFile, 'utf-8'));
     const todayStr = new Date().toISOString().slice(0, 10);

@@ -1,11 +1,3 @@
-jest.mock('../../src/tasks/store', () => ({
-  readAll: jest.fn(),
-  create: jest.fn(),
-  updateStatus: jest.fn(),
-  readById: jest.fn(),
-}));
-
-import { readAll, create, updateStatus, readById } from '../../src/tasks/store';
 import { handleAdd } from '../../src/telegram/commands/add';
 import { handleTasks } from '../../src/telegram/commands/tasks';
 import { handleToday } from '../../src/telegram/commands/today';
@@ -14,6 +6,13 @@ import { handleHelp } from '../../src/telegram/commands/help';
 import { handleMove } from '../../src/telegram/commands/move';
 import { handleTask } from '../../src/telegram/commands/task';
 import { Task } from '@nexkan/shared';
+
+const mockTaskStore = {
+  readAll: jest.fn(),
+  create: jest.fn(),
+  updateStatus: jest.fn(),
+  readById: jest.fn(),
+} as any;
 
 function makeCtx(text: string = ''): any {
   return {
@@ -58,28 +57,28 @@ describe('handleHelp', () => {
 
 describe('handleAdd', () => {
   it('creates a task with title', async () => {
-    (create as jest.Mock).mockResolvedValue(makeTask({ title: 'Buy milk' }));
+    mockTaskStore.create.mockResolvedValue(makeTask({ title: 'Buy milk' }));
     const ctx = makeCtx('/add Buy milk');
     ctx.match = 'Buy milk';
-    await handleAdd(ctx);
-    expect(create).toHaveBeenCalledWith(expect.objectContaining({ title: 'Buy milk' }));
+    await handleAdd(ctx, mockTaskStore);
+    expect(mockTaskStore.create).toHaveBeenCalledWith(expect.objectContaining({ title: 'Buy milk' }));
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('created'));
   });
 
   it('replies with error when title is empty', async () => {
     const ctx = makeCtx('/add');
     ctx.match = '';
-    await handleAdd(ctx);
-    expect(create).not.toHaveBeenCalled();
+    await handleAdd(ctx, mockTaskStore);
+    expect(mockTaskStore.create).not.toHaveBeenCalled();
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('Usage'));
   });
 
   it('parses natural language date from text', async () => {
-    (create as jest.Mock).mockResolvedValue(makeTask());
+    mockTaskStore.create.mockResolvedValue(makeTask());
     const ctx = makeCtx('/add Deploy server tomorrow');
     ctx.match = 'Deploy server tomorrow';
-    await handleAdd(ctx);
-    expect(create).toHaveBeenCalledWith(
+    await handleAdd(ctx, mockTaskStore);
+    expect(mockTaskStore.create).toHaveBeenCalledWith(
       expect.objectContaining({
         due_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       })
@@ -87,11 +86,11 @@ describe('handleAdd', () => {
   });
 
   it('preserves text after the parsed date in the title', async () => {
-    (create as jest.Mock).mockResolvedValue(makeTask());
+    mockTaskStore.create.mockResolvedValue(makeTask());
     const ctx = makeCtx('/add Call dentist tomorrow to schedule appointment');
     ctx.match = 'Call dentist tomorrow to schedule appointment';
-    await handleAdd(ctx);
-    expect(create).toHaveBeenCalledWith(
+    await handleAdd(ctx, mockTaskStore);
+    expect(mockTaskStore.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Call dentist to schedule appointment',
         due_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
@@ -100,11 +99,11 @@ describe('handleAdd', () => {
   });
 
   it('correctly handles substring overlap when removing date from title', async () => {
-    (create as jest.Mock).mockResolvedValue(makeTask());
+    mockTaskStore.create.mockResolvedValue(makeTask());
     const ctx = makeCtx('/add buy sunscreen sun');
     ctx.match = 'buy sunscreen sun';
-    await handleAdd(ctx);
-    expect(create).toHaveBeenCalledWith(
+    await handleAdd(ctx, mockTaskStore);
+    expect(mockTaskStore.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'buy sunscreen',
         due_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
@@ -113,60 +112,60 @@ describe('handleAdd', () => {
   });
 
   it('catches errors and replies with message', async () => {
-    (create as jest.Mock).mockRejectedValue(new Error('Disk error'));
+    mockTaskStore.create.mockRejectedValue(new Error('Disk error'));
     const ctx = makeCtx('/add Task');
     ctx.match = 'Task';
-    await handleAdd(ctx);
+    await handleAdd(ctx, mockTaskStore);
     expect(ctx.reply).toHaveBeenCalledWith('Something went wrong. Try again.');
   });
 });
 
 describe('handleTasks', () => {
   it('shows grouped tasks', async () => {
-    (readAll as jest.Mock).mockResolvedValue([
+    mockTaskStore.readAll.mockResolvedValue([
       makeTask({ id: 'aaa11111', title: 'Todo Task', status: 'todo' }),
       makeTask({ id: 'bbb22222', title: 'In Progress Task', status: 'in-progress' }),
     ]);
     const ctx = makeCtx('/tasks');
-    await handleTasks(ctx);
+    await handleTasks(ctx, mockTaskStore);
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('Todo Task'), expect.anything());
   });
 
   it('shows "No tasks" when empty', async () => {
-    (readAll as jest.Mock).mockResolvedValue([]);
+    mockTaskStore.readAll.mockResolvedValue([]);
     const ctx = makeCtx('/tasks');
-    await handleTasks(ctx);
+    await handleTasks(ctx, mockTaskStore);
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('No tasks'));
   });
 });
 
 describe('handleToday', () => {
   it('calls readAll with due_today:true filter', async () => {
-    (readAll as jest.Mock).mockResolvedValue([makeTask({ title: 'Due Today Task' })]);
+    mockTaskStore.readAll.mockResolvedValue([makeTask({ title: 'Due Today Task' })]);
     const ctx = makeCtx('/today');
-    await handleToday(ctx);
-    expect(readAll).toHaveBeenCalledWith(expect.objectContaining({ due_today: true }));
+    await handleToday(ctx, mockTaskStore);
+    expect(mockTaskStore.readAll).toHaveBeenCalledWith(expect.objectContaining({ due_today: true }));
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('Due Today Task'), expect.anything());
   });
 });
 
 describe('handleOverdue', () => {
   it('calls readAll with overdue:true filter', async () => {
-    (readAll as jest.Mock).mockResolvedValue([makeTask({ title: 'Overdue Task', due_date: '2020-01-01' })]);
+    mockTaskStore.readAll.mockResolvedValue([makeTask({ title: 'Overdue Task', due_date: '2020-01-01' })]);
     const ctx = makeCtx('/overdue');
-    await handleOverdue(ctx);
-    expect(readAll).toHaveBeenCalledWith(expect.objectContaining({ overdue: true }));
+    await handleOverdue(ctx, mockTaskStore);
+    expect(mockTaskStore.readAll).toHaveBeenCalledWith(expect.objectContaining({ overdue: true }));
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('Overdue Task'), expect.anything());
   });
 });
 
 describe('handleTask', () => {
   it('shows task detail with action buttons', async () => {
-    (readById as jest.Mock).mockResolvedValue(makeTask({ id: 'abc12345', title: 'My Task' }));
+    mockTaskStore.readById.mockResolvedValue(makeTask({ id: 'abc12345', title: 'My Task' }));
     const ctx = makeCtx('/task abc12345');
     ctx.match = 'abc12345';
-    await handleTask(ctx);
-    expect(readById).toHaveBeenCalledWith('abc12345');
+    await handleTask(ctx, mockTaskStore);
+    expect(mockTaskStore.readById).toHaveBeenCalledWith('abc12345');
     expect(ctx.reply).toHaveBeenCalledWith(
       expect.stringContaining('My Task'),
       expect.objectContaining({ reply_markup: expect.anything() })
@@ -174,38 +173,38 @@ describe('handleTask', () => {
   });
 
   it('replies not found for unknown ID', async () => {
-    (readById as jest.Mock).mockResolvedValue(null);
+    mockTaskStore.readById.mockResolvedValue(null);
     const ctx = makeCtx('/task notexist');
     ctx.match = 'notexist';
-    await handleTask(ctx);
+    await handleTask(ctx, mockTaskStore);
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('not found'));
   });
 });
 
 describe('handleMove', () => {
   it('moves a task to new status', async () => {
-    (readById as jest.Mock).mockResolvedValue(makeTask({ id: 'abc12345', due_date: '2099-12-31' }));
-    (updateStatus as jest.Mock).mockResolvedValue(makeTask({ status: 'done' }));
+    mockTaskStore.readById.mockResolvedValue(makeTask({ id: 'abc12345', due_date: '2099-12-31' }));
+    mockTaskStore.updateStatus.mockResolvedValue(makeTask({ status: 'done' }));
     const ctx = makeCtx('/move abc12345 done');
     ctx.match = 'abc12345 done';
-    await handleMove(ctx);
-    expect(updateStatus).toHaveBeenCalledWith('abc12345', 'done', undefined);
+    await handleMove(ctx, mockTaskStore);
+    expect(mockTaskStore.updateStatus).toHaveBeenCalledWith('abc12345', 'done', undefined);
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('done'));
   });
 
   it('asks for due_date when moving to todo without one', async () => {
-    (readById as jest.Mock).mockResolvedValue(makeTask({ id: 'abc12345', due_date: undefined, status: 'done' }));
+    mockTaskStore.readById.mockResolvedValue(makeTask({ id: 'abc12345', due_date: undefined, status: 'done' }));
     const ctx = makeCtx('/move abc12345 todo');
     ctx.match = 'abc12345 todo';
-    await handleMove(ctx);
-    expect(updateStatus).not.toHaveBeenCalled();
+    await handleMove(ctx, mockTaskStore);
+    expect(mockTaskStore.updateStatus).not.toHaveBeenCalled();
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('due date'));
   });
 
   it('shows usage when args are wrong', async () => {
     const ctx = makeCtx('/move');
     ctx.match = '';
-    await handleMove(ctx);
+    await handleMove(ctx, mockTaskStore);
     expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining('Usage'));
   });
 });

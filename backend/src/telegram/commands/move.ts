@@ -1,8 +1,8 @@
-import { readById, updateStatus } from '../../tasks/store';
+import { TaskStore } from '../../tasks/store';
 import { TaskStatus, TASK_STATUSES, requiresDueDate } from '@nexkan/shared';
 import type { CommandContext } from 'grammy';
 
-export async function handleMove(ctx: CommandContext<any>): Promise<void> {
+export async function handleMove(ctx: CommandContext<any>, taskStore: TaskStore): Promise<void> {
   try {
     const args: string = ctx.match?.trim() ?? '';
     const parts = args.split(/\s+/);
@@ -16,11 +16,10 @@ export async function handleMove(ctx: CommandContext<any>): Promise<void> {
 
     if (!TASK_STATUSES.includes(status)) {
       await ctx.reply(`Invalid status. Use: ${TASK_STATUSES.join(', ')}`);
-
       return;
     }
 
-    const task = await readById(id);
+    const task = await taskStore.readById(id);
     if (!task) {
       await ctx.reply(`Task ${id} not found.`);
       return;
@@ -31,7 +30,7 @@ export async function handleMove(ctx: CommandContext<any>): Promise<void> {
       return;
     }
 
-    await updateStatus(id, status, undefined);
+    await taskStore.updateStatus(id, status, undefined);
     await ctx.reply(`✅ Moved "${task.title}" → ${status}`);
   } catch {
     await ctx.reply('Something went wrong. Try again.');

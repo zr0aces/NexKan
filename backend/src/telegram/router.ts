@@ -13,65 +13,71 @@ import { handleNote } from './commands/note';
 import { handleNotes } from './commands/notes';
 import { handleDelnote } from './commands/delnote';
 import { handleCallback } from './callbacks';
-import { webhookCallback, BotError } from 'grammy';
+import { webhookCallback } from 'grammy';
 import { isAuthorizedChat } from './utils';
+import { TaskStore } from '../tasks/store';
+import { NoteStore } from '../scratchpad/store';
 
-export const telegramRouter = Router();
+export function createTelegramRouter(taskStore: TaskStore, noteStore: NoteStore): Router {
+  const router = Router();
 
-telegramRouter.post('/webhooks/telegram', webhookAuth, async (req: Request, res: Response) => {
-  try {
-    await webhookCallback(getBot(), 'express')(req, res);
-  } catch (err) {
-    console.error('Webhook error:', err);
+  router.post('/webhooks/telegram', webhookAuth, async (req: Request, res: Response) => {
+    try {
+      await webhookCallback(getBot(), 'express')(req, res);
+    } catch (err) {
+      console.error('Webhook error:', err);
+      try {
+        const chatId = process.env.TELEGRAM_CHAT_ID;
+        if (chatId) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          await getBot().api.sendMessage(
+            chatId,
+            `⚠️ **Webhook Delivery Error:**\n\`${errMsg}\``,
+            { parse_mode: 'Markdown' }
+          ).catch(() => {});
+        }
+      } catch (sendErr) {
+        console.error('Failed to send webhook error notification to Telegram:', sendErr);
+      }
+      if (!res.headersSent) res.sendStatus(200);
+    }
+  });
+
+  router.post('/notifications/check', cronAuth, async (_req: Request, res: Response) => {
+    try {
+      await checkAndNotify(taskStore);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('Notification check error:', err);
+      res.status(500).json({ error: 'Notification check failed' });
+    }
+  });
+
+  router.get('/telegram/status', async (_req: Request, res: Response) => {
+    try {
+      const bot = getBot();
+      const me = await bot.api.getMe();
+      res.json({ ok: true, bot: me.username });
+    } catch (err) {
+      res.status(503).json({ ok: false, error: 'Bot unreachable' });
+    }
+  });
+
+  router.post('/telegram/test', async (_req: Request, res: Response) => {
     try {
       const chatId = process.env.TELEGRAM_CHAT_ID;
-      if (chatId) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        await getBot().api.sendMessage(
-          chatId,
-          `⚠️ **Webhook Delivery Error:**\n\`${errMsg}\``,
-          { parse_mode: 'Markdown' }
-        ).catch(() => {});
-      }
-    } catch (sendErr) {
-      console.error('Failed to send webhook error notification to Telegram:', sendErr);
+      if (!chatId) return void res.status(400).json({ error: 'TELEGRAM_CHAT_ID not set' });
+      await getBot().api.sendMessage(chatId, '🧪 NexKan test notification');
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to send test message' });
     }
-    if (!res.headersSent) res.sendStatus(200);
-  }
-});
+  });
 
-telegramRouter.post('/notifications/check', cronAuth, async (_req: Request, res: Response) => {
-  try {
-    await checkAndNotify();
-    res.json({ ok: true });
-  } catch (err) {
-    console.error('Notification check error:', err);
-    res.status(500).json({ error: 'Notification check failed' });
-  }
-});
+  return router;
+}
 
-telegramRouter.get('/telegram/status', async (_req: Request, res: Response) => {
-  try {
-    const bot = getBot();
-    const me = await bot.api.getMe();
-    res.json({ ok: true, bot: me.username });
-  } catch (err) {
-    res.status(503).json({ ok: false, error: 'Bot unreachable' });
-  }
-});
-
-telegramRouter.post('/telegram/test', async (_req: Request, res: Response) => {
-  try {
-    const chatId = process.env.TELEGRAM_CHAT_ID;
-    if (!chatId) return void res.status(400).json({ error: 'TELEGRAM_CHAT_ID not set' });
-    await getBot().api.sendMessage(chatId, '🧪 NexKan test notification');
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to send test message' });
-  }
-});
-
-export function setupBotCommands(): void {
+export function setupBotCommands(taskStore: TaskStore, noteStore: NoteStore): void {
   const bot = getBot();
 
   bot.catch(async (err) => {
@@ -113,15 +119,15 @@ export function setupBotCommands(): void {
     );
   });
 
-  bot.command('add', handleAdd);
-  bot.command('tasks', handleTasks);
-  bot.command('today', handleToday);
-  bot.command('overdue', handleOverdue);
-  bot.command('task', handleTask);
-  bot.command('move', handleMove);
+  bot.command('add', (ctx) => handleAdd(ctx, taskStore));
+  bot.command('tasks', (ctx) => handleTasks(ctx, taskStore));
+  bot.command('today', (ctx) => handleToday(ctx, taskStore));
+  bot.command('overdue', (ctx) => handleOverdue(ctx, taskStore));
+  bot.command('task', (ctx) => handleTask(ctx, taskStore));
+  bot.command('move', (ctx) => handleMove(ctx, taskStore));
   bot.command('help', handleHelp);
-  bot.command('note', handleNote);
-  bot.command('notes', handleNotes);
-  bot.command('delnote', handleDelnote);
-  bot.on('callback_query:data', handleCallback);
+  bot.command('note', (ctx) => handleNote(ctx, noteStore));
+  bot.command('notes', (ctx) => handleNotes(ctx, noteStore));
+  bot.command('delnote', (ctx) => handleDelnote(ctx, noteStore));
+  bot.on('callback_query:data', (ctx) => handleCallback(ctx, taskStore));
 }

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { readAll, readById, create, update, deleteNote, NotFoundError } from './store';
-import { create as createTask } from '../tasks/store';
+import { NoteStore, NotFoundError } from './store';
+import { TaskStore } from '../tasks/store';
 
 const ContentSchema = z.object({ content: z.string().min(1) });
 
@@ -11,72 +11,76 @@ const ConvertSchema = z.object({
   status: z.enum(['todo', 'in-progress', 'done']).optional(),
 });
 
-export const noteRouter = Router();
+export function createNoteRouter(noteStore: NoteStore, taskStore: TaskStore): Router {
+  const router = Router();
 
-noteRouter.get('/', async (_req: Request, res: Response) => {
-  try {
-    res.json(await readAll());
-  } catch {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-noteRouter.post('/', async (req: Request, res: Response) => {
-  const parsed = ContentSchema.safeParse(req.body);
-  if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-  try {
-    res.status(201).json(await create(parsed.data.content));
-  } catch {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-noteRouter.patch('/:id', async (req: Request, res: Response) => {
-  const parsed = ContentSchema.safeParse(req.body);
-  if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-  try {
-    res.json(await update(req.params.id, parsed.data.content));
-  } catch (err) {
-    if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-noteRouter.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    await deleteNote(req.params.id);
-    res.status(204).send();
-  } catch (err) {
-    if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-noteRouter.post('/:id/convert', async (req: Request, res: Response) => {
-  const parsed = ConvertSchema.safeParse(req.body);
-  if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-  try {
-    const note = await readById(req.params.id);
-    if (!note) return void res.status(404).json({ error: `Note ${req.params.id} not found` });
-
-    const lines = note.content.split('\n');
-    const title = lines[0].trim();
-    if (!title) return void res.status(400).json({ error: 'Note first line must be non-empty to use as task title' });
-    const description = lines.slice(1).join('\n').trim() || undefined;
-
-    const task = await createTask({
-      title,
-      description,
-      due_date: parsed.data.due_date,
-      priority: parsed.data.priority,
-      status: parsed.data.status ?? 'todo',
-    });
-    await deleteNote(req.params.id);
-    res.status(201).json(task);
-  } catch (err) {
-    if (err instanceof Error && err.message.includes('due_date')) {
-      return void res.status(400).json({ error: err.message });
+  router.get('/', async (_req: Request, res: Response) => {
+    try {
+      res.json(await noteStore.readAll());
+    } catch {
+      res.status(500).json({ error: 'Internal server error' });
     }
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  });
+
+  router.post('/', async (req: Request, res: Response) => {
+    const parsed = ContentSchema.safeParse(req.body);
+    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
+    try {
+      res.status(201).json(await noteStore.create(parsed.data.content));
+    } catch {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.patch('/:id', async (req: Request, res: Response) => {
+    const parsed = ContentSchema.safeParse(req.body);
+    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
+    try {
+      res.json(await noteStore.update(req.params.id, parsed.data.content));
+    } catch (err) {
+      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.delete('/:id', async (req: Request, res: Response) => {
+    try {
+      await noteStore.deleteNote(req.params.id);
+      res.status(204).send();
+    } catch (err) {
+      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.post('/:id/convert', async (req: Request, res: Response) => {
+    const parsed = ConvertSchema.safeParse(req.body);
+    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
+    try {
+      const note = await noteStore.readById(req.params.id);
+      if (!note) return void res.status(404).json({ error: `Note ${req.params.id} not found` });
+
+      const lines = note.content.split('\n');
+      const title = lines[0].trim();
+      if (!title) return void res.status(400).json({ error: 'Note first line must be non-empty to use as task title' });
+      const description = lines.slice(1).join('\n').trim() || undefined;
+
+      const task = await taskStore.create({
+        title,
+        description,
+        due_date: parsed.data.due_date,
+        priority: parsed.data.priority,
+        status: parsed.data.status ?? 'todo',
+      });
+      await noteStore.deleteNote(req.params.id);
+      res.status(201).json(task);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('due_date')) {
+        return void res.status(400).json({ error: err.message });
+      }
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  return router;
+}

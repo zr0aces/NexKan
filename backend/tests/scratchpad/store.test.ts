@@ -1,31 +1,32 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { readAll, readById, create, update, deleteNote, NotFoundError, closeWatchers } from '../../src/scratchpad/store';
+import { NoteStore, NotFoundError } from '../../src/scratchpad/store';
+import { FileSystemStorageProvider } from '../../src/storage/fileSystem';
 
 let tmpDir: string;
+let noteStore: NoteStore;
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexkan-scratchpad-test-'));
-  process.env.SCRATCHPAD_DIR = tmpDir;
+  noteStore = new NoteStore(new FileSystemStorageProvider(tmpDir));
 });
 
 afterEach(() => {
-  closeWatchers();
+  noteStore.close();
   fs.rmSync(tmpDir, { recursive: true, force: true });
-  delete process.env.SCRATCHPAD_DIR;
 });
 
 describe('readAll', () => {
   it('returns empty array when dir is empty', async () => {
-    expect(await readAll()).toEqual([]);
+    expect(await noteStore.readAll()).toEqual([]);
   });
 
   it('returns notes sorted by created_at desc', async () => {
-    const n1 = await create('First note');
+    const n1 = await noteStore.create('First note');
     await new Promise(r => setTimeout(r, 5));
-    const n2 = await create('Second note');
-    const notes = await readAll();
+    const n2 = await noteStore.create('Second note');
+    const notes = await noteStore.readAll();
     expect(notes[0].id).toBe(n2.id);
     expect(notes[1].id).toBe(n1.id);
   });
@@ -33,20 +34,20 @@ describe('readAll', () => {
 
 describe('readById', () => {
   it('returns note by id', async () => {
-    const created = await create('Hello');
-    const found = await readById(created.id);
+    const created = await noteStore.create('Hello');
+    const found = await noteStore.readById(created.id);
     expect(found?.id).toBe(created.id);
     expect(found?.content).toBe('Hello');
   });
 
   it('returns null for unknown id', async () => {
-    expect(await readById('notexist')).toBeNull();
+    expect(await noteStore.readById('notexist')).toBeNull();
   });
 });
 
 describe('create', () => {
   it('creates a note with given content', async () => {
-    const note = await create('Buy milk');
+    const note = await noteStore.create('Buy milk');
     expect(note.content).toBe('Buy milk');
     expect(note.id).toHaveLength(8);
     expect(note.created_at).toBeTruthy();
@@ -54,7 +55,7 @@ describe('create', () => {
   });
 
   it('persists note as a markdown file', async () => {
-    const note = await create('Test content');
+    const note = await noteStore.create('Test content');
     const files = fs.readdirSync(tmpDir).filter(f => f.endsWith('.md'));
     expect(files).toContain(`${note.id}.md`);
   });
@@ -62,49 +63,49 @@ describe('create', () => {
 
 describe('update', () => {
   it('updates note content', async () => {
-    const note = await create('Original');
-    const updated = await update(note.id, 'Updated');
+    const note = await noteStore.create('Original');
+    const updated = await noteStore.update(note.id, 'Updated');
     expect(updated.content).toBe('Updated');
     expect(updated.id).toBe(note.id);
     expect(updated.created_at).toBe(note.created_at);
   });
 
   it('throws NotFoundError for unknown id', async () => {
-    await expect(update('notexist', 'x')).rejects.toThrow(NotFoundError);
+    await expect(noteStore.update('notexist', 'x')).rejects.toThrow(NotFoundError);
   });
 });
 
 describe('deleteNote', () => {
   it('removes the markdown file', async () => {
-    const note = await create('To delete');
-    await deleteNote(note.id);
+    const note = await noteStore.create('To delete');
+    await noteStore.deleteNote(note.id);
     expect(fs.existsSync(path.join(tmpDir, `${note.id}.md`))).toBe(false);
   });
 
   it('throws NotFoundError for unknown id', async () => {
-    await expect(deleteNote('notexist')).rejects.toThrow(NotFoundError);
+    await expect(noteStore.deleteNote('notexist')).rejects.toThrow(NotFoundError);
   });
 });
 
 describe('security: path traversal prevention', () => {
   it('readById returns null for traversal path', async () => {
-    const found = await readById('../etc/passwd');
+    const found = await noteStore.readById('../etc/passwd');
     expect(found).toBeNull();
   });
 
   it('update throws NotFoundError for traversal path', async () => {
-    await expect(update('../etc/passwd', 'hack')).rejects.toThrow(NotFoundError);
+    await expect(noteStore.update('../etc/passwd', 'hack')).rejects.toThrow(NotFoundError);
   });
 
   it('deleteNote throws NotFoundError for traversal path', async () => {
-    await expect(deleteNote('../etc/passwd')).rejects.toThrow(NotFoundError);
+    await expect(noteStore.deleteNote('../etc/passwd')).rejects.toThrow(NotFoundError);
   });
 });
 
 describe('file watcher cache synchronization', () => {
   it('updates cache dynamically when note file is created or deleted externally', async () => {
     // Initial read to spin up cache & watcher
-    await readAll();
+    await noteStore.readAll();
 
     // Write directly to filesystem bypassed write-through logic
     const noteId = 'ext12345';
@@ -115,7 +116,7 @@ describe('file watcher cache synchronization', () => {
     await new Promise(r => setTimeout(r, 60));
 
     // Confirm file watcher loaded it into cache
-    const found = await readById(noteId);
+    const found = await noteStore.readById(noteId);
     expect(found).toBeDefined();
     expect(found?.content).toBe('External Note');
 
@@ -126,8 +127,7 @@ describe('file watcher cache synchronization', () => {
     await new Promise(r => setTimeout(r, 60));
 
     // Confirm it is removed from cache
-    const deletedFound = await readById(noteId);
+    const deletedFound = await noteStore.readById(noteId);
     expect(deletedFound).toBeNull();
   });
 });
-

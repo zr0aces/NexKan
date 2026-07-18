@@ -1,4 +1,4 @@
-import { readAll } from '../../tasks/store';
+import { TaskStore } from '../../tasks/store';
 import { Task, formatDate } from '@nexkan/shared';
 import { escapeMd } from '../utils';
 import type { Context } from 'grammy';
@@ -8,9 +8,9 @@ function formatTask(t: Task): string {
   return `• ${escapeMd(t.title)} (${t.id})${due}`;
 }
 
-export async function handleOverdue(ctx: Context): Promise<void> {
+export async function handleOverdue(ctx: Context, taskStore: TaskStore): Promise<void> {
   try {
-    const tasks = await readAll({ overdue: true });
+    const tasks = await taskStore.readAll({ overdue: true });
     if (tasks.length === 0) {
       await ctx.reply('No overdue tasks. 🎉', { parse_mode: 'Markdown' });
       return;

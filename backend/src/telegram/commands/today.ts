@@ -1,4 +1,4 @@
-import { readAll } from '../../tasks/store';
+import { TaskStore } from '../../tasks/store';
 import { Task } from '@nexkan/shared';
 import { escapeMd } from '../utils';
 import type { Context } from 'grammy';
@@ -9,9 +9,9 @@ function formatTask(t: Task): string {
   return `• ${escapeMd(t.title)} (${t.id})${priority}${status}`;
 }
 
-export async function handleToday(ctx: Context): Promise<void> {
+export async function handleToday(ctx: Context, taskStore: TaskStore): Promise<void> {
   try {
-    const tasks = await readAll({ due_today: true });
+    const tasks = await taskStore.readAll({ due_today: true });
     if (tasks.length === 0) {
       await ctx.reply('No tasks due today.', { parse_mode: 'Markdown' });
       return;

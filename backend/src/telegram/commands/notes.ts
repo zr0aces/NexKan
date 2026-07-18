@@ -1,10 +1,10 @@
-import { readAll } from '../../scratchpad/store';
+import { NoteStore } from '../../scratchpad/store';
 import { escapeMd } from '../utils';
 import type { Context } from 'grammy';
 
-export async function handleNotes(ctx: Context): Promise<void> {
+export async function handleNotes(ctx: Context, noteStore: NoteStore): Promise<void> {
   try {
-    const notes = await readAll();
+    const notes = await noteStore.readAll();
     if (notes.length === 0) {
       await ctx.reply('No scratchpad notes.');
       return;

@@ -1,9 +1,9 @@
-import { readById } from '../../tasks/store';
+import { TaskStore } from '../../tasks/store';
 import { escapeMd, buildTaskKeyboard } from '../utils';
 import { formatDate } from '@nexkan/shared';
 import type { CommandContext } from 'grammy';
 
-export async function handleTask(ctx: CommandContext<any>): Promise<void> {
+export async function handleTask(ctx: CommandContext<any>, taskStore: TaskStore): Promise<void> {
   try {
     const id: string = ctx.match?.trim() ?? '';
     if (!id) {
@@ -11,7 +11,7 @@ export async function handleTask(ctx: CommandContext<any>): Promise<void> {
       return;
     }
 
-    const task = await readById(id);
+    const task = await taskStore.readById(id);
     if (!task) {
       await ctx.reply(`Task ${id} not found.`);
       return;

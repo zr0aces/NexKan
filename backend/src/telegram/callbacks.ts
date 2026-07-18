@@ -1,9 +1,9 @@
-import { updateStatus, readById } from '../tasks/store';
+import { TaskStore } from '../tasks/store';
 import type { Context } from 'grammy';
 import { escapeMd, buildTaskKeyboard } from './utils';
 import { formatDate, TASK_STATUSES, TaskStatus } from '@nexkan/shared';
 
-export async function handleCallback(ctx: Context): Promise<void> {
+export async function handleCallback(ctx: Context, taskStore: TaskStore): Promise<void> {
   const data: string = ctx.callbackQuery?.data ?? '';
 
   if (data.startsWith('move:')) {
@@ -19,7 +19,7 @@ export async function handleCallback(ctx: Context): Promise<void> {
       return;
     }
     try {
-      const task = await updateStatus(taskId, newStatus as TaskStatus, undefined);
+      const task = await taskStore.updateStatus(taskId, newStatus as TaskStatus, undefined);
       await ctx.answerCallbackQuery({ text: `✅ Moved to ${newStatus}` });
 
       const lines = [
@@ -52,7 +52,7 @@ export async function handleCallback(ctx: Context): Promise<void> {
   if (data.startsWith('view:')) {
     const taskId = data.split(':')[1];
     try {
-      const task = await readById(taskId);
+      const task = await taskStore.readById(taskId);
       if (!task) {
         await ctx.answerCallbackQuery({ text: 'Task not found.' });
         return;

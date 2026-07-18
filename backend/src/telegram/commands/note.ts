@@ -1,14 +1,14 @@
-import { create } from '../../scratchpad/store';
+import { NoteStore } from '../../scratchpad/store';
 import type { CommandContext } from 'grammy';
 
-export async function handleNote(ctx: CommandContext<any>): Promise<void> {
+export async function handleNote(ctx: CommandContext<any>, noteStore: NoteStore): Promise<void> {
   const text: string = ctx.match?.trim() ?? '';
   if (!text) {
     await ctx.reply('Usage: /note <text>\nExample: /note Call dentist Monday');
     return;
   }
   try {
-    const note = await create(text);
+    const note = await noteStore.create(text);
     const preview = text.length > 60 ? text.slice(0, 57) + '...' : text;
     await ctx.reply(`📝 Note saved (${note.id}): ${preview}`);
   } catch {

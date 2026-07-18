@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { readAll } from '../tasks/store';
+import { TaskStore } from '../tasks/store';
 import { getBot } from './bot';
 import { buildTaskKeyboard } from './utils';
 import { startOfDay, isBefore, isEqual, addDays, format } from 'date-fns';
@@ -57,14 +57,14 @@ function pruneSent(sent: Record<string, boolean>, activeTaskIds: string[]): Reco
   return pruned;
 }
 
-export async function checkAndNotify(): Promise<void> {
+export async function checkAndNotify(taskStore: TaskStore): Promise<void> {
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!chatId) {
     console.warn('TELEGRAM_CHAT_ID not set — notifications skipped');
     return;
   }
 
-  const tasks = await readAll();
+  const tasks = await taskStore.readAll();
   const sent = await loadSent();
   const activeTaskIds = tasks.filter(t => t.status !== 'done').map(t => t.id);
   const pruned = pruneSent(sent, activeTaskIds);

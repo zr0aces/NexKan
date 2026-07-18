@@ -5,8 +5,6 @@ import * as os from 'os';
 import { serializeTask } from '../../src/tasks/parser';
 import { Task } from '@nexkan/shared';
 
-import { closeWatchers } from '../../src/tasks/store';
-
 let tmpDir: string;
 let app: typeof import('../../src/app').default;
 
@@ -42,8 +40,9 @@ afterAll(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
-afterEach(() => {
-  closeWatchers();
+afterEach(async () => {
+  const { defaultTaskStore } = await import('../../src/app');
+  defaultTaskStore.close();
   fs.readdirSync(tmpDir).forEach(f => fs.unlinkSync(path.join(tmpDir, f)));
 });
 

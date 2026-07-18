@@ -6,8 +6,6 @@ import * as path from 'path';
 let tmpDir: string;
 let app: typeof import('../../src/app').default;
 
-import { closeWatchers } from '../../src/scratchpad/store';
-
 beforeAll(async () => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexkan-note-router-test-'));
   process.env.SCRATCHPAD_DIR = tmpDir;
@@ -20,8 +18,9 @@ afterAll(() => {
   fs.rmSync(process.env.DATA_DIR!, { recursive: true, force: true });
 });
 
-afterEach(() => {
-  closeWatchers();
+afterEach(async () => {
+  const { defaultNoteStore } = await import('../../src/app');
+  defaultNoteStore.close();
   fs.readdirSync(tmpDir).filter(f => f.endsWith('.md')).forEach(f => fs.unlinkSync(path.join(tmpDir, f)));
 });
 
