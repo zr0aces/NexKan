@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { NoteStore, NotFoundError } from './store';
+import { NoteConverter } from './converter';
 import { TaskStore } from '../tasks/store';
 
 const ContentSchema = z.object({ content: z.string().min(1) });
@@ -53,29 +54,19 @@ export function createNoteRouter(noteStore: NoteStore, taskStore: TaskStore): Ro
     }
   });
 
+  const converter = new NoteConverter(noteStore, taskStore);
+
   router.post('/:id/convert', async (req: Request, res: Response) => {
     const parsed = ConvertSchema.safeParse(req.body);
     if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
     try {
-      const note = await noteStore.readById(req.params.id);
-      if (!note) return void res.status(404).json({ error: `Note ${req.params.id} not found` });
-
-      const lines = note.content.split('\n');
-      const title = lines[0].trim();
-      if (!title) return void res.status(400).json({ error: 'Note first line must be non-empty to use as task title' });
-      const description = lines.slice(1).join('\n').trim() || undefined;
-
-      const task = await taskStore.create({
-        title,
-        description,
-        due_date: parsed.data.due_date,
-        priority: parsed.data.priority,
-        status: parsed.data.status ?? 'todo',
-      });
-      await noteStore.deleteNote(req.params.id);
+      const task = await converter.convert(req.params.id, parsed.data);
       res.status(201).json(task);
     } catch (err) {
-      if (err instanceof Error && err.message.includes('due_date')) {
+      if (err instanceof NotFoundError) {
+        return void res.status(404).json({ error: err.message });
+      }
+      if (err instanceof Error && (err.message.includes('first line') || err.message.includes('due_date'))) {
         return void res.status(400).json({ error: err.message });
       }
       res.status(500).json({ error: 'Internal server error' });

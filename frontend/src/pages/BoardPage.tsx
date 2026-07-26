@@ -49,30 +49,40 @@ export default function BoardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-background">
-        <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+      <header className="border-b border-border/80 bg-background/95 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center hover:opacity-90 transition-opacity" title={`NexKan v${VERSION}`}>
-              <Logo className="h-6 w-6 text-foreground" />
-              <span className="hidden sm:inline font-bold text-xl ml-2 select-none">NexKan</span>
-              <span className="hidden sm:inline text-[9px] font-mono font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 select-none tracking-wider ml-1.5">
+              <Logo className="h-6 w-6 text-primary" />
+              <span className="hidden sm:inline font-display font-bold text-xl ml-2 select-none tracking-tight">NexKan</span>
+              <span className="hidden sm:inline text-[10px] font-mono font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 select-none tracking-wider ml-1.5">
                 v{VERSION}
               </span>
             </Link>
             
-            <nav className="flex gap-3 ml-1 sm:ml-2">
-              <Link to="/" className="text-sm font-medium text-foreground">Board</Link>
-              <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">Dashboard</Link>
+            <nav className="flex items-center gap-1 sm:gap-2 ml-1">
+              <Link
+                to="/"
+                className="text-xs font-medium text-primary bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 transition-colors"
+              >
+                Board
+              </Link>
+              <Link
+                to="/dashboard"
+                className="text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg px-3 py-1.5 transition-colors"
+              >
+                Dashboard
+              </Link>
             </nav>
           </div>
           
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-8 w-8">
+            <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-8 w-8 text-muted-foreground hover:text-foreground">
               <RefreshCw className="h-4 w-4" />
             </Button>
             <ThemeToggle />
-            <Button size="sm" onClick={() => handleAddClick('todo')} className="h-8">
-              <Plus className="h-4 w-4 sm:mr-1" />
+            <Button size="sm" onClick={() => handleAddClick('todo')} className="h-8.5 font-medium px-3.5 shadow-sm">
+              <Plus className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">New Task</span>
             </Button>
           </div>

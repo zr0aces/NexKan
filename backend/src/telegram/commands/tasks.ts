@@ -1,13 +1,6 @@
 import { TaskStore } from '../../tasks/store';
-import { Task, formatDate } from '@nexkan/shared';
-import { escapeMd } from '../utils';
+import { TelegramPresenter } from '../presenter';
 import type { Context } from 'grammy';
-
-function formatTask(t: Task): string {
-  const due = t.due_date ? ` · Due: ${formatDate(t.due_date)}` : '';
-  const priority = t.priority ? ` [${t.priority}]` : '';
-  return `• ${escapeMd(t.title)} (${t.id})${priority}${due}`;
-}
 
 export async function handleTasks(ctx: Context, taskStore: TaskStore): Promise<void> {
   try {
@@ -17,21 +10,12 @@ export async function handleTasks(ctx: Context, taskStore: TaskStore): Promise<v
       return;
     }
 
-    const lines: string[] = [];
-    const todo = tasks.filter(t => t.status === 'todo');
-    const inProgress = tasks.filter(t => t.status === 'in-progress');
+    const message = TelegramPresenter.formatGroupedTasks([
+      { header: '🔄 In Progress:', tasks: tasks.filter(t => t.status === 'in-progress') },
+      { header: '📌 Todo:', tasks: tasks.filter(t => t.status === 'todo') },
+    ]);
 
-    if (inProgress.length > 0) {
-      lines.push('🔄 In Progress:');
-      inProgress.forEach(t => lines.push(formatTask(t)));
-    }
-    if (todo.length > 0) {
-      if (lines.length > 0) lines.push('');
-      lines.push('📌 Todo:');
-      todo.forEach(t => lines.push(formatTask(t)));
-    }
-
-    await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
+    await ctx.reply(message, { parse_mode: 'Markdown' });
   } catch {
     await ctx.reply('Something went wrong. Try again.');
   }

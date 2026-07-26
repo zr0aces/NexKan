@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Note, TaskPriority } from '@nexkan/shared';
+import { DatePicker } from '@/components/shared/DatePicker';
 
 interface ConvertDialogProps {
   note: Note | null;
@@ -54,11 +55,11 @@ export function ConvertDialog({ note, open, onOpenChange, onConfirm }: ConvertDi
           <p className="text-xs text-muted-foreground">Status will be set to <strong>todo</strong>.</p>
           <div className="space-y-1.5">
             <Label htmlFor="convert-due-date">Due Date *</Label>
-            <Input
+            <DatePicker
               id="convert-due-date"
-              type="date"
               value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
+              onChange={setDueDate}
+              required
             />
           </div>
           <div className="space-y-1.5">

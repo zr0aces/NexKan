@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Task, TaskStatus, TaskPriority, requiresDueDate } from '@nexkan/shared';
+import { DatePicker } from '@/components/shared/DatePicker';
 import { TaskDetail } from './TaskDetail';
 import { useCreateTask, useUpdateTask, useDeleteTask, useUpdateTaskStatus } from '@/hooks/useTaskMutation';
 
@@ -161,8 +162,13 @@ export function TaskDialog({ task, defaultStatus = 'todo', open, onOpenChange }:
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="due_date">Due Date</Label>
-              <Input id="due_date" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              <Label htmlFor="due_date">Due Date {requiresDueDate(status) && '*'}</Label>
+              <DatePicker
+                id="due_date"
+                value={dueDate}
+                onChange={setDueDate}
+                required={requiresDueDate(status)}
+              />
             </div>
 
             <div className="space-y-2">

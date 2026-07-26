@@ -13,6 +13,7 @@ jest.mock('../../src/telegram/bot', () => ({
 import { getBot } from '../../src/telegram/bot';
 import { checkAndNotify } from '../../src/telegram/notifier';
 import { Task } from '@nexkan/shared';
+import { format } from 'date-fns';
 
 let tmpFile: string;
 
@@ -87,9 +88,10 @@ describe('checkAndNotify', () => {
     // 1. An overdue key from a previous day for an active task (should be pruned)
     // 2. An overdue key for today for an active task (should be kept)
     // 3. A notification key for a task that is now done or deleted (should be pruned)
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
     const initialSent = {
       'abc12345:overdue:2020-01-01': true,
-      [`abc12345:overdue:${new Date().toISOString().slice(0, 10)}`]: true,
+      [`abc12345:overdue:${todayStr}`]: true,
       'done1234:due-today:2020-01-01': true,
     };
     fs.writeFileSync(tmpFile, JSON.stringify(initialSent, null, 2));
@@ -101,7 +103,6 @@ describe('checkAndNotify', () => {
     await checkAndNotify(mockTaskStore);
 
     const saved = JSON.parse(fs.readFileSync(tmpFile, 'utf-8'));
-    const todayStr = new Date().toISOString().slice(0, 10);
     expect(saved).toEqual({
       [`abc12345:overdue:${todayStr}`]: true,
     });

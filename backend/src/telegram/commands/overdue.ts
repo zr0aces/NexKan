@@ -1,12 +1,6 @@
 import { TaskStore } from '../../tasks/store';
-import { Task, formatDate } from '@nexkan/shared';
-import { escapeMd } from '../utils';
+import { TelegramPresenter } from '../presenter';
 import type { Context } from 'grammy';
-
-function formatTask(t: Task): string {
-  const due = t.due_date ? ` · Due: ${formatDate(t.due_date)}` : '';
-  return `• ${escapeMd(t.title)} (${t.id})${due}`;
-}
 
 export async function handleOverdue(ctx: Context, taskStore: TaskStore): Promise<void> {
   try {
@@ -15,9 +9,8 @@ export async function handleOverdue(ctx: Context, taskStore: TaskStore): Promise
       await ctx.reply('No overdue tasks. 🎉', { parse_mode: 'Markdown' });
       return;
     }
-    const lines = ['⚠️ Overdue tasks:'];
-    tasks.forEach(t => lines.push(formatTask(t)));
-    await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
+    const message = TelegramPresenter.formatTaskList('⚠️ Overdue tasks:', tasks);
+    await ctx.reply(message, { parse_mode: 'Markdown' });
   } catch {
     await ctx.reply('Something went wrong. Try again.');
   }
