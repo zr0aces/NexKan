@@ -8,21 +8,8 @@ data/
 frontend/dist/
 tsconfig.tsbuildinfo
 
-# Agent memory and rules
-AGENT.md
-.agent/
-.claude/
-.agents/
-.agent-mem/
-.cursor/
-.cursorrules
-.windsurf/
-.windsurfrules
-.cline/
-.clinerules
-.roo/
-.gemini/
-.brainsync/
+# AI tool local configuration and generated artifacts (Claude Code, AGY, Codex)
+.claude/settings.local.json
 cache/
 graphify-out/
 shared/dist/

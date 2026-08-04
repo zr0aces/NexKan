@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AI Agent Guidelines — NexKan
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Canonical project context for AI coding tools. Supported tools: **Claude Code**, **Google Antigravity (AGY)**, **Codex**. Each tool has its own thin entry point (`CLAUDE.md`, `.agents/`, `AGENTS.md` respectively) that points here for shared content and adds only what's genuinely tool-specific.
 
 ## Project Overview
 
@@ -16,13 +16,13 @@ npm workspaces with three packages:
 
 ## Commands
 
-### Root (run from `/home/san/workspace/NexKan`)
+### Root (run from repo root)
 
 ```bash
 npm install          # install all workspaces
 ```
 
-### Utility Scripts (run from `/home/san/workspace/NexKan`)
+### Utility Scripts (run from repo root)
 
 ```bash
 ./scripts/add-user.sh <username>          # Add or update basic-auth user
@@ -141,43 +141,32 @@ Copy `.env.example` to `.env`. Key vars:
 - `shared/dist/` is gitignored — never `git add shared/dist/`. Only commit `shared/src/` changes after building.
 - Telegram webhook middleware and `registerWebhook()` are symmetric: if `TELEGRAM_WEBHOOK_SECRET` unset → register without secret + middleware passes all; if set → validate header. Mismatch causes 401. Fix: `docker compose exec backend node dist/scripts/telegram-webhook.js set`.
 
-## 🛠️ UNIFIED AI WORKFLOW (Graphify, RTK, Caveman, Claude-Mem)
+## Shared AI Workflow Conventions
 
-This repository adopts a unified AI development workflow across **Claude Code**, **Google Antigravity CLI (`agy`)**, and **Codex**. Follow these instructions strictly:
+These conventions apply across all three supported tools (Claude Code, AGY, Codex). Tool-specific entry points may restate a short summary for discoverability, but this section is canonical.
 
-### 1. Graphify (Codebase Knowledge Graph)
-This project has a Graphify knowledge graph at `graphify-out/`.
-- **Read first**: Before answering codebase, architecture, or relationship questions, check `graphify-out/GRAPH_REPORT.md` for community structures and god nodes.
-- **BFS Traversal**: For cross-module relationship questions, use `graphify query "<question>"` (BFS) or `graphify path "<nodeA>" "<nodeB>"` (shortest path) rather than grepping.
-- **Wiki Navigation**: If `graphify-out/wiki/index.md` exists, navigate it first.
-- **Keep Current**: After modifying code files, run `graphify update .` to update the AST/graph without API costs.
+### Graphify (Codebase Knowledge Graph)
 
-### 2. RTK (Rust Token Killer) - Token-Optimized Commands
-- **Golden Rule**: Always prefix commands with `rtk`. If RTK has a dedicated filter, it uses it. If not, it passes through unchanged.
-- **Chained Commands**: Prefix each command in a chain (e.g., `rtk git add . && rtk git commit -m "msg" && rtk git push`).
-- **Commands by Workflow**:
-  - *Git*: `rtk git status` (compact status), `rtk git diff` (compact diff), `rtk git log` (compact log).
-  - *Build/Compile*: `rtk cargo build`, `rtk tsc` (grouped typescript errors), `rtk lint` (grouped eslint violations).
-  - *Test*: `rtk cargo test` / `rtk jest` / `rtk vitest` / `rtk playwright test` (failures only).
-  - *JavaScript*: `rtk npm run <script>`, `rtk npx <cmd>`, `rtk pnpm install` (compact install output).
-  - *Search/Files*: `rtk ls` (tree format), `rtk read <file>` (filtered reading), `rtk grep <pattern>` (grouped search).
-  - *Meta*: `rtk gain` (savings stats), `rtk gain --history` (history), `rtk proxy <cmd>` (bypass filter).
+This repo has a Graphify knowledge graph at `graphify-out/`.
 
-### 3. Caveman (Terse Communication)
-- **Always Active**: Respond terse like a smart caveman. All technical substance stays, only fluff/pleasantries die.
-- **Rules**:
-  - Drop articles (a/an/the), filler (basically, just, really), pleasantries ("Sure! I'd be happy to help"), and hedging.
-  - Fragments are OK. Short synonyms. Technical terms exact. Code/commits/PRs written normally.
-  - Pattern: `[thing] [action] [reason]. [next step].`
-    * *Example*: "Bug in auth middleware. Fix: [code]. Verify."
-- **Auto-Clarity**: Drop caveman mode for security warnings, irreversible actions, or when the user is confused. Resume after.
-- **Level Selection**: `/caveman lite|full|ultra|wenyan` (default is full). Use "stop caveman" or "normal mode" to stop.
+- **Read first**: Before answering codebase, architecture, or relationship questions, check `graphify-out/GRAPH_REPORT.md` for community structure and god nodes.
+- **Traversal**: For cross-module relationship questions, prefer `graphify query "<question>"` (BFS) or `graphify path "<nodeA>" "<nodeB>"` (shortest path) over raw grep.
+- **Wiki navigation**: If `graphify-out/wiki/index.md` exists, navigate it first for broad orientation.
+- **Keep current**: After modifying code files, run `graphify update .` to refresh the AST/graph (no API cost).
 
-### 4. Claude-Mem (Cross-Session Memory)
-This project uses `claude-mem` for persistent memory across sessions.
-- **Context Injection**: Review the `<claude-mem-context>` block injected at session start for active observations.
-- **Memory Queries**: When asked about previous sessions/fixes, use the `search` and `timeline` MCP tools to query memory.
-- **3-Layer Workflow**:
-  1. **Search**: Run `search(query="...", project="...")` to retrieve a compact list of IDs.
-  2. **Timeline**: Run `timeline(anchor=ID, project="...")` to inspect context around specific events.
-  3. **Fetch**: Use `get_observations(ids=[...])` to retrieve detailed observations only for target IDs.
+### RTK (Rust Token Killer) — Token-Optimized Commands
+
+Token-optimized CLI proxy that cuts noisy command output before it reaches the model.
+
+- **Golden rule**: prefix shell commands with `rtk` (e.g. `rtk git status`, `rtk npm test`). If RTK has a dedicated filter it's used; otherwise the command passes through unchanged.
+- **Chained commands**: prefix each command in a chain individually (`rtk git add . && rtk git commit -m "msg" && rtk git push`).
+- **Meta commands**: `rtk gain` (savings stats), `rtk gain --history` (usage history), `rtk discover` (find missed opportunities), `rtk proxy <cmd>` (bypass filtering for debugging).
+
+### Caveman (Terse Communication)
+
+Default communication style for this repo's AI sessions: terse, technical substance preserved, fluff removed.
+
+- Drop articles, filler words, and pleasantries. Fragments are fine. Technical terms stay exact.
+- Code, commits, and PRs are always written in normal prose — caveman style applies to conversational responses only.
+- Drop caveman style for security warnings, irreversible-action confirmations, or when the user is confused; resume once that's resolved.
+- Level selection: `/caveman lite|full|ultra`. Stop with "stop caveman" or "normal mode".

@@ -86,3 +86,4 @@ NexKan features a unified, minimalist flat-UI design layout centered around a te
 - [Deployment guide](docs/deployment.md) — Setup, HTTPS, cron, updates, troubleshooting
 - [API reference](docs/api.md) — All REST endpoints, query params, request/response shapes
 - [Versioning & releases guide](docs/versioning.md) — CalVer scheme, syncing, release script
+- [AI agent guidelines](docs/ai-agent-guidelines.md) — Shared context for supported AI coding tools (Claude Code, Google Antigravity, Codex)
