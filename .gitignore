@@ -15,3 +15,8 @@ backend/coverage/
 cache/
 graphify-out/
 shared/dist/
+# agent-parity:begin
+/.claude/*
+!/.claude/settings.json
+# agent-parity:end
+.agent-parity/
