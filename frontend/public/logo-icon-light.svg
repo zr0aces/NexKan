@@ -1,59 +1,73 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
-    <!-- Card Cutout Mask for Paper Airplane -->
-    <mask id="airplane-mask" maskUnits="userSpaceOnUse">
-      <!-- White card base -->
-      <rect x="224" y="144" width="80" height="120" rx="10" fill="white" />
-      <!-- Black cutout for paper airplane -->
-      <g transform="translate(264, 204) rotate(45)">
-        <path d="M 0,-22 L 18,14 L 0,5 L -18,14 Z" fill="black" />
-        <line x1="0" y1="-22" x2="0" y2="5" stroke="white" stroke-width="2" stroke-linecap="round" />
-      </g>
-    </mask>
-    
-    <!-- Gradient for active card -->
-    <linearGradient id="brand-grad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FF9E00" />
-      <stop offset="100%" stop-color="#FF3D00" />
+    <linearGradient id="brand-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFA600" />
+      <stop offset="50%" stop-color="#FF6B00" />
+      <stop offset="100%" stop-color="#E63900" />
     </linearGradient>
   </defs>
-  
-  <!-- Spiral Notebook Page Frame (with solid background fill for visibility/depth) -->
-  <rect x="108" y="64" width="320" height="384" rx="24" fill="#FFFFFF" stroke="#0F172A" stroke-width="16" />
-  
-  <!-- Spiral Loops on Left Edge (Modern curves) -->
-  <path d="M 124,106 C 88,106 88,118 124,118" stroke="#0F172A" stroke-width="8" stroke-linecap="round" />
-  <path d="M 124,174 C 88,174 88,186 124,186" stroke="#0F172A" stroke-width="8" stroke-linecap="round" />
-  <path d="M 124,242 C 88,242 88,254 124,254" stroke="#0F172A" stroke-width="8" stroke-linecap="round" />
-  <path d="M 124,310 C 88,310 88,322 124,322" stroke="#0F172A" stroke-width="8" stroke-linecap="round" />
-  <path d="M 124,378 C 88,378 88,390 124,390" stroke="#0F172A" stroke-width="8" stroke-linecap="round" />
-  
-  <!-- Punch Holes (to complete the spiral binder look) -->
-  <circle cx="124" cy="112" r="4" fill="#0F172A" opacity="0.4" />
-  <circle cx="124" cy="180" r="4" fill="#0F172A" opacity="0.4" />
-  <circle cx="124" cy="248" r="4" fill="#0F172A" opacity="0.4" />
-  <circle cx="124" cy="316" r="4" fill="#0F172A" opacity="0.4" />
-  <circle cx="124" cy="384" r="4" fill="#0F172A" opacity="0.4" />
-  
-  <!-- Column 1 (Todo) Cards -->
-  <rect x="136" y="104" width="76" height="64" rx="8" fill="#0F172A" fill-opacity="0.2" stroke="#0F172A" stroke-width="2" stroke-opacity="0.35" />
-  <rect x="136" y="184" width="76" height="64" rx="8" fill="#0F172A" fill-opacity="0.2" stroke="#0F172A" stroke-width="2" stroke-opacity="0.35" />
-  <rect x="136" y="264" width="76" height="64" rx="8" fill="#0F172A" fill-opacity="0.2" stroke="#0F172A" stroke-width="2" stroke-opacity="0.35" />
-  
-  <!-- Column 2 (In Progress) Cards -->
-  <!-- Standard card in Column 2 -->
-  <rect x="224" y="280" width="76" height="64" rx="8" fill="#0F172A" fill-opacity="0.2" stroke="#0F172A" stroke-width="2" stroke-opacity="0.35" />
-  <!-- Active Orange Card with cutout -->
-  <rect x="224" y="144" width="80" height="120" rx="10" fill="url(#brand-grad)" mask="url(#airplane-mask)" />
-  
-  <!-- Column 3 (Done) Cards -->
-  <rect x="316" y="104" width="76" height="64" rx="8" fill="#0F172A" fill-opacity="0.2" stroke="#0F172A" stroke-width="2" stroke-opacity="0.35" />
-  <rect x="316" y="280" width="76" height="64" rx="8" fill="#0F172A" fill-opacity="0.2" stroke="#0F172A" stroke-width="2" stroke-opacity="0.35" />
-  
-  <!-- Completed Card with checkmark badge -->
-  <g>
-    <rect x="316" y="184" width="76" height="80" rx="8" fill="#0F172A" fill-opacity="0.2" stroke="#0F172A" stroke-width="2" stroke-opacity="0.35" />
-    <circle cx="354" cy="224" r="14" fill="#10B981" />
-    <path d="M 347,224 L 352,229 L 361,219" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-  </g>
+
+  <!-- Outer Hexagonal Frame -->
+  <path
+    d="M 256,56 L 440,168 L 440,360 L 256,472 L 72,360 L 72,168 Z"
+    stroke="url(#brand-grad)"
+    stroke-width="28"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Vertical Column Dividers (detached from shield) -->
+  <line
+    x1="204"
+    y1="160"
+    x2="204"
+    y2="390"
+    stroke="url(#brand-grad)"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <line
+    x1="308"
+    y1="160"
+    x2="308"
+    y2="390"
+    stroke="url(#brand-grad)"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+
+  <!-- Horizontal Column Header Dividers (detached from shield and dividers) -->
+  <line
+    x1="116"
+    y1="188"
+    x2="196"
+    y2="188"
+    stroke="url(#brand-grad)"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <line
+    x1="216"
+    y1="188"
+    x2="296"
+    y2="188"
+    stroke="url(#brand-grad)"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <line
+    x1="316"
+    y1="188"
+    x2="396"
+    y2="188"
+    stroke="url(#brand-grad)"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+
+  <!-- 4 Kanban Cards -->
+  <rect x="126" y="212" width="58" height="52" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+  <rect x="227" y="212" width="58" height="52" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+  <rect x="328" y="212" width="58" height="52" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+  <rect x="227" y="282" width="58" height="52" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
 </svg>
