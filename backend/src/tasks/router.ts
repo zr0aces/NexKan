@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { TaskStore, NotFoundError } from './store';
+import { TaskService } from './service';
 import { TaskFilters } from '@nexkan/shared';
 
 const CreateTaskSchema = z.object({
@@ -33,6 +34,7 @@ const OrderSchema = z.object({
 
 export function createTaskRouter(taskStore: TaskStore): Router {
   const router = Router();
+  const taskService = new TaskService(taskStore);
 
   router.get('/', async (req: Request, res: Response) => {
     try {
@@ -46,7 +48,7 @@ export function createTaskRouter(taskStore: TaskStore): Router {
         due_today: req.query.due_today === 'true',
         due_tomorrow: req.query.due_tomorrow === 'true',
       };
-      const tasks = await taskStore.readAll(filters);
+      const tasks = await taskService.listTasks(filters);
       res.json(tasks);
     } catch (err) {
       res.status(500).json({ error: 'Internal server error' });
@@ -55,7 +57,7 @@ export function createTaskRouter(taskStore: TaskStore): Router {
 
   router.get('/:id', async (req: Request, res: Response) => {
     try {
-      const task = await taskStore.readById(req.params.id);
+      const task = await taskService.getTask(req.params.id);
       if (!task) return void res.status(404).json({ error: 'Task not found' });
       res.json(task);
     } catch (err) {
@@ -67,7 +69,7 @@ export function createTaskRouter(taskStore: TaskStore): Router {
     const parsed = CreateTaskSchema.safeParse(req.body);
     if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
     try {
-      const task = await taskStore.create(parsed.data);
+      const task = await taskService.createTask(parsed.data);
       res.status(201).json(task);
     } catch (err) {
       if (err instanceof Error && err.message.includes('due_date')) {
@@ -81,10 +83,15 @@ export function createTaskRouter(taskStore: TaskStore): Router {
     const parsed = UpdateTaskSchema.safeParse(req.body);
     if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
     try {
-      const task = await taskStore.update(req.params.id, parsed.data);
+      const task = await taskService.updateTask(req.params.id, parsed.data);
       res.json(task);
     } catch (err) {
-      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+        return void res.status(404).json({ error: err.message });
+      }
+      if (err instanceof Error && err.message.includes('due_date')) {
+        return void res.status(400).json({ error: err.message });
+      }
       res.status(500).json({ error: 'Internal server error' });
     }
   });
@@ -93,10 +100,12 @@ export function createTaskRouter(taskStore: TaskStore): Router {
     const parsed = StatusSchema.safeParse(req.body);
     if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
     try {
-      const task = await taskStore.updateStatus(req.params.id, parsed.data.status, parsed.data.due_date);
+      const task = await taskService.updateTaskStatus(req.params.id, parsed.data.status, parsed.data.due_date);
       res.json(task);
     } catch (err) {
-      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+        return void res.status(404).json({ error: err.message });
+      }
       if (err instanceof Error && err.message.includes('due_date')) {
         return void res.status(400).json({ error: err.message });
       }
@@ -108,23 +117,28 @@ export function createTaskRouter(taskStore: TaskStore): Router {
     const parsed = OrderSchema.safeParse(req.body);
     if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
     try {
-      const task = await taskStore.updateOrder(req.params.id, parsed.data.position);
+      const task = await taskService.updateOrder(req.params.id, parsed.data.position);
       res.json(task);
     } catch (err) {
-      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+        return void res.status(404).json({ error: err.message });
+      }
       res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   router.delete('/:id', async (req: Request, res: Response) => {
     try {
-      await taskStore.deleteTask(req.params.id);
+      await taskService.deleteTask(req.params.id);
       res.status(204).send();
     } catch (err) {
-      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
+      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+        return void res.status(404).json({ error: err.message });
+      }
       res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   return router;
 }
+

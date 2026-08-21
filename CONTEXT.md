@@ -13,3 +13,6 @@ This document outlines the core domain model terms and architectural concepts fo
 * **StorageProvider** (Seam) — A relative, path-based filesystem abstraction interface. Isolates raw directory reads/writes, path handling, exists checks, and file watchers from domain logic.
 * **FileSystemStorageProvider** (Adapter) — Production implementation of `StorageProvider` that interacts directly with the local disk utilizing `fs.promises` and directory watchers.
 * **InMemoryStorageProvider** (Adapter) — A lightweight in-memory test double of `StorageProvider` used to verify store and router behavior without touching the disk.
+* **TaskService** (Domain Service) — Business logic encapsulation and invariant validation over `TaskStore`.
+* **TelegramPresenter** (Presentation Layer) — Message serialization and markdown escaping for Telegram bot outputs and keyboard builders.
+

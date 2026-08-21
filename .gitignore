@@ -6,7 +6,9 @@ backend/data/notifications-sent.json
 *.env.local
 data/
 frontend/dist/
-tsconfig.tsbuildinfo
+coverage/
+backend/coverage/
+*.tsbuildinfo
 
 # AI tool local configuration and generated artifacts (Claude Code, AGY, Codex)
 .claude/settings.local.json

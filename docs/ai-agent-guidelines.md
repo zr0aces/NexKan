@@ -40,6 +40,7 @@ node scripts/release.mjs [version]        # Auto-sync, build, and output git rel
 cd shared
 npm run build        # compile to dist/ — required before backend/frontend use it
 npm run build:watch  # watch mode during development
+npm test             # vitest run
 ```
 
 ### Backend
@@ -60,6 +61,7 @@ cd frontend
 npm run dev          # vite dev server
 npm run build        # tsc -b && vite build → dist/
 npm run preview      # preview production build
+npm test             # vitest run
 ```
 
 ### Docker (production)
@@ -78,9 +80,11 @@ Frontend is served as static files via nginx from `frontend/dist/`. Run `npm run
 
 - **Tasks**: Tasks live in `data/tasks/` as markdown files named `{id}-{slug}.md`. Each file has YAML frontmatter (id, title, status, priority, tags, due_date, sort_order, timestamps) plus `## Description` and optional `## Notes` sections in the body.
 - **Scratchpad Notes**: Notes live in `data/scratchpad/` as markdown files named `{id}.md`.
+- `backend/src/storage/` — `StorageProvider` filesystem abstraction interface with `FileSystemStorageProvider` (production disk I/O) and `InMemoryStorageProvider` (in-memory test double).
 - `backend/src/tasks/parser.ts` — serialize/deserialize between markdown files and `Task` objects via `gray-matter`.
-- `backend/src/tasks/store.ts` — all task file I/O: CRUD, filter, sort, reorder. Every operation reads from disk (no in-memory cache). `sort_order` is an integer per column; reorder rewrites all affected files atomically with snapshot-based rollback.
-- `backend/src/scratchpad/store.ts` — note file CRUD operations.
+- `backend/src/tasks/store.ts` — `TaskStore` with in-memory cache and file watcher. `sort_order` is an integer per column; reorder rewrites all affected files atomically with snapshot-based rollback.
+- `backend/src/tasks/service.ts` — `TaskService` business logic and validation layer wrapping `TaskStore`.
+- `backend/src/scratchpad/store.ts` — `NoteStore` CRUD operations.
 
 ### Backend
 
@@ -88,7 +92,7 @@ Frontend is served as static files via nginx from `frontend/dist/`. Run `npm run
 - `src/server.ts` — HTTP listener, starts Telegram webhook registration
 - `src/tasks/router.ts` — Task REST endpoints, Zod validation on all inputs
 - `src/scratchpad/router.ts` — Notes REST endpoints, Zod validation, and Task conversion logic
-- `src/telegram/` — grammy bot, webhook handler at `POST /api/webhooks/telegram`, per-command files in `commands/`, notification cron endpoint at `POST /api/notifications/check`
+- `src/telegram/` — grammy bot, webhook handler at `POST /api/webhooks/telegram`, per-command files in `commands/`, `TelegramPresenter` for message formatting, notification cron endpoint at `POST /api/notifications/check`
 
 ### Frontend
 
