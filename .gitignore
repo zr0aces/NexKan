@@ -20,3 +20,8 @@ shared/dist/
 /.claude/*
 !/.claude/settings.json
 # agent-parity:end
+
+# agent-parity tooling is local, reinstallable: keep it out of git.
+# Only the memory notes sync.
+/.agent-parity/*
+!/.agent-parity/memory/
