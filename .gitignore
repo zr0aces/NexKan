@@ -16,7 +16,7 @@ cache/
 graphify-out/
 shared/dist/
 # agent-parity:begin
+!/.agent-parity/
 /.claude/*
 !/.claude/settings.json
 # agent-parity:end
-.agent-parity/
