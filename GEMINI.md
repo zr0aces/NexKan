@@ -7,7 +7,6 @@ Project overview, monorepo structure, commands, architecture, key invariants, an
 ## Antigravity Specific
 
 - Global hooks in `~/.gemini/settings.json` wire RTK (`BeforeTool` on `run_command`/`run_shell_command`) and the Graphify read guard. Both apply automatically; do not re-prefix commands that the hook already rewrote.
-- `claude-mem` cross-session memory is Claude Code only and is not available here. Do not reference its `search`/`timeline`/`get_observations` tools.
 
 <!-- agent-parity:pointer -->
 ## Shared memory and agent state
