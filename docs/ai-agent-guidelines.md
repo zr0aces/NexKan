@@ -174,3 +174,11 @@ Default communication style for this repo's AI sessions: terse, technical substa
 - Code, commits, and PRs are always written in normal prose — caveman style applies to conversational responses only.
 - Drop caveman style for security warnings, irreversible-action confirmations, or when the user is confused; resume once that's resolved.
 - Level selection: `/caveman lite|full|ultra`. Stop with "stop caveman" or "normal mode".
+
+## Plans
+
+When creating a plan file under `docs/plans/`, the filename must include the creation date using the format `YYYY-MM-dd-plan-name.md`.
+Use the actual date when the plan is created.
+Use a clear, descriptive name for `plan-name`.
+
+Example: `2026-09-12-document-figures-alignment.md`
