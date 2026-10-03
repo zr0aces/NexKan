@@ -15,6 +15,7 @@ services:
       - ./data/notifications-sent.json:/app/data/notifications-sent.json
     env_file: .env
     restart: unless-stopped
+    stop_grace_period: 15s
 
   frontend:
     container_name: nexkan-frontend

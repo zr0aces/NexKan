@@ -10,7 +10,7 @@ import { Task, Note } from '@nexkan/shared';
 import { serializeTask } from '../../src/tasks/parser';
 import { serializeNote } from '../../src/scratchpad/parser';
 
-export const SERVER_MODE = (process.env.TEST_SERVER_MODE || 'express') as 'express' | 'fastify';
+export const SERVER_MODE = (process.env.TEST_SERVER_MODE || 'fastify') as 'express' | 'fastify';
 export const isFastify = SERVER_MODE === 'fastify';
 
 export interface ContractTestContext {

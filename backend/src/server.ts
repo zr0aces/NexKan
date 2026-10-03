@@ -29,6 +29,28 @@ async function start(): Promise<void> {
     console.warn('TELEGRAM_BOT_TOKEN not set — Telegram features disabled');
   }
 
+  // Graceful shutdown handling
+  const shutdown = async (signal: string) => {
+    console.log(`Received ${signal}. Shutting down gracefully...`);
+    const forceExitTimer = setTimeout(() => {
+      console.error('Forced shutdown after 10s timeout');
+      process.exit(1);
+    }, 10000);
+    forceExitTimer.unref();
+
+    try {
+      await app.close();
+      console.log('NexKan backend closed cleanly');
+      process.exit(0);
+    } catch (err) {
+      console.error('Error during shutdown:', err);
+      process.exit(1);
+    }
+  };
+
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+  process.once('SIGINT', () => shutdown('SIGINT'));
+
   app.listen({ port, host: '0.0.0.0' }, (err) => {
     if (err) {
       console.error(err);

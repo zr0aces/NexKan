@@ -316,6 +316,17 @@ Zod validation errors return the flattened error object:
 }
 ```
 
+### Framework behavior & edge cases
+
+- **Malformed JSON & payload limits (C2):** Malformed JSON returns HTTP 400 with `{ "error": "<message>" }`. Request payloads larger than 10 KiB on standard endpoints return HTTP 413 JSON (webhooks allow up to 1 MiB under D3).
+- **Route 404s (C3):** Unknown endpoints return HTTP 404 JSON `{ "error": "Not found" }`.
+- **Case sensitivity (C4):** API routes are case-sensitive (`/api/tasks`, not `/API/tasks`).
+- **Auth before parsing (C5):** Protected endpoints (`/api/webhooks/telegram`, `/api/notifications/check`) execute authentication before request body parsing. Requests with invalid or missing secret tokens return 401 without parsing body payloads.
+- **Content-Type validation (C6):** Endpoints that parse JSON reject requests with non-JSON media types (e.g. `text/plain`, `application/x-www-form-urlencoded`) with HTTP 415 `Unsupported Media Type`. Note: `DELETE` requests with an empty body and `Content-Type: application/json` are accepted and return 204.
+- **Headers (C7):** Responses omit `X-Powered-By` and `ETag` headers.
+- **Path parameters (C8):** Path parameters exceeding 100 characters return HTTP 404 `{ "error": "Not found" }`.
+- **Healthcheck:** An unauthenticated `GET /healthz` endpoint is available locally on port 3000 for Docker container health monitoring, returning `200` with `{ "status": "ok" }`. It is not routed through external nginx.
+
 ---
 
 ## Notification dedup keys

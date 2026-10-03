@@ -391,3 +391,21 @@ Typical idle consumption:
 - CPU: <1% idle, brief spikes on request
 
 The stateless read-on-demand design means no background processes and no memory growth over time.
+
+---
+
+## Architecture invariants & lifecycle
+
+### 1. One-writer invariant
+NexKan is designed as a single-instance, single-user system. The data directory (`./data`) stores flat Markdown files with YAML frontmatter and `notifications-sent.json`. It must be mounted into **only one running container at a time** (no horizontal scaling or multiple concurrent backend replicas). Running multiple writers will lead to race conditions and inconsistent cache states.
+
+### 2. Healthcheck & monitoring
+The backend container image includes a native Docker `HEALTHCHECK` that queries `GET http://127.0.0.1:3000/healthz` every 10 seconds via Node's built-in `fetch`:
+- `HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"`
+- In `docker-compose.yml`, nginx keeps `depends_on: { backend: { condition: service_started } }`. This decouples frontend serving from backend healthcheck transition states, preventing misconfigurations from crashing nginx.
+
+### 3. Graceful shutdown
+The backend traps `SIGTERM` and `SIGINT` signals for clean shutdown:
+- Fastify's `app.close()` is invoked, stopping new incoming requests and closing all `fs.watch` file system handles.
+- Docker containers run with `stop_grace_period: 15s`. If graceful termination takes longer than 10 seconds, an unreferenced safety timeout forces process exit to avoid zombie processes.
+
