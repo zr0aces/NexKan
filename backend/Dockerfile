@@ -47,4 +47,4 @@ RUN chmod +x backend/scripts/init-data.sh
 
 WORKDIR /app/backend
 EXPOSE 3000
-CMD ["sh", "-c", "./scripts/init-data.sh && node dist/server.js"]
+CMD ["sh", "-c", "./scripts/init-data.sh && exec node dist/server.js"]

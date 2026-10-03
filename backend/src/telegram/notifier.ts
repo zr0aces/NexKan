@@ -57,7 +57,9 @@ function pruneSent(sent: Record<string, boolean>, activeTaskIds: string[]): Reco
   return pruned;
 }
 
-export async function checkAndNotify(taskStore: TaskStore): Promise<void> {
+let inFlightPromise: Promise<void> | null = null;
+
+async function doCheckAndNotify(taskStore: TaskStore): Promise<void> {
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!chatId) {
     console.warn('TELEGRAM_CHAT_ID not set — notifications skipped');
@@ -141,3 +143,18 @@ export async function checkAndNotify(taskStore: TaskStore): Promise<void> {
     }
   }
 }
+
+export async function checkAndNotify(taskStore: TaskStore): Promise<void> {
+  if (inFlightPromise) {
+    return inFlightPromise;
+  }
+  inFlightPromise = (async () => {
+    try {
+      await doCheckAndNotify(taskStore);
+    } finally {
+      inFlightPromise = null;
+    }
+  })();
+  return inFlightPromise;
+}
+

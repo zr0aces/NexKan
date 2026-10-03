@@ -2,6 +2,7 @@ import express from 'express';
 import { createTaskRouter } from './tasks/router';
 import { createNoteRouter } from './scratchpad/router';
 import { createTelegramRouter } from './telegram/router';
+import { webhookAuth } from './telegram/middleware';
 import { FileSystemStorageProvider } from './storage/fileSystem';
 import { TaskStore } from './tasks/store';
 import { NoteStore } from './scratchpad/store';
@@ -9,6 +10,7 @@ import * as path from 'path';
 
 export function createApp(taskStore: TaskStore, noteStore: NoteStore): express.Express {
   const app = express();
+  app.use('/api/webhooks/telegram', webhookAuth, express.json({ limit: '1mb' }));
   app.use(express.json({ limit: '10kb' }));
   app.use('/api/tasks', createTaskRouter(taskStore));
   app.use('/api/notes', createNoteRouter(noteStore, taskStore));

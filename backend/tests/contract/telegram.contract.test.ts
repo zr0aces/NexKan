@@ -41,17 +41,15 @@ describe('Telegram Contract Tests (Rows 13-16)', () => {
       expect(resWrong.body).toEqual({ error: 'Unauthorized' });
     });
 
-    it('returns 200 when webhook secret is unset on Express (pre-D2 fail-open)', async () => {
+    it('returns 401 {error: "Unauthorized"} when webhook secret is unset (D2 fail-closed)', async () => {
       delete process.env.TELEGRAM_WEBHOOK_SECRET;
-      const bot = getBot();
-      jest.spyOn(bot, 'handleUpdate').mockResolvedValue();
 
       const res = await request(ctx.server)
         .post('/api/webhooks/telegram')
         .send({ update_id: 100 });
 
-      // On Express today, unset secret passes
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(401);
+      expect(res.body).toEqual({ error: 'Unauthorized' });
     });
 
     it('returns 200 on valid secret token even when update handler throws', async () => {

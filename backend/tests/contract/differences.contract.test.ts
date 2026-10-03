@@ -185,13 +185,8 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
         .set('x-telegram-bot-api-secret-token', 'test-webhook-secret')
         .send(payload);
 
-      if (isFastify) {
-        // Fastify / D3 target: 1 MiB limit for webhook
-        expect(res.status).toBe(200);
-      } else {
-        // Baseline Express (pre-D3): 10 KiB global limit returns 413
-        expect(res.status).toBe(413);
-      }
+      // D3 (Phase 1+): 1 MiB limit for webhook allows 14 KiB update
+      expect(res.status).toBe(200);
     });
   });
 

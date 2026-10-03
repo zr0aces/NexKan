@@ -6,6 +6,18 @@ const port = parseInt(process.env.PORT ?? '3000', 10);
 
 async function start(): Promise<void> {
   if (process.env.TELEGRAM_BOT_TOKEN) {
+    if (!process.env.TELEGRAM_WEBHOOK_SECRET) {
+      console.error(
+        'Telegram misconfigured: TELEGRAM_BOT_TOKEN is set but TELEGRAM_WEBHOOK_SECRET is missing. Set it or unset TELEGRAM_BOT_TOKEN.'
+      );
+      process.exit(1);
+    }
+    if (!process.env.TELEGRAM_CHAT_ID) {
+      console.error(
+        'Telegram misconfigured: TELEGRAM_BOT_TOKEN is set but TELEGRAM_CHAT_ID is missing. Set it or unset TELEGRAM_BOT_TOKEN.'
+      );
+      process.exit(1);
+    }
     try {
       setupBotCommands(defaultTaskStore, defaultNoteStore);
       await registerWebhook();

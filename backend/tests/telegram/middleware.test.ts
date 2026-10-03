@@ -14,11 +14,11 @@ describe('webhookAuth', () => {
     process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
   });
 
-  it('passes through when no secret is configured', async () => {
+  it('returns 401 when no secret is configured', async () => {
     delete process.env.TELEGRAM_WEBHOOK_SECRET;
     const app = makeApp(webhookAuth);
     const res = await request(app).get('/test');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
   });
 
   it('returns 401 when header is missing', async () => {

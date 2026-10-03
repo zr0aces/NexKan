@@ -6,8 +6,8 @@ export { escapeMd };
 export function isAuthorizedChat(ctx: Context): boolean {
   const allowedId = process.env.TELEGRAM_CHAT_ID;
   if (!allowedId) {
-    console.warn('TELEGRAM_CHAT_ID not set — accepting all incoming Telegram messages');
-    return true;
+    console.error('TELEGRAM_CHAT_ID not set — rejecting incoming Telegram message');
+    return false;
   }
   const chatId = String(ctx.chat?.id ?? ctx.from?.id ?? '');
   return chatId === allowedId;

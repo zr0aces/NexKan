@@ -12,10 +12,10 @@ describe('Telegram utils', () => {
   });
 
   describe('isAuthorizedChat', () => {
-    it('returns true when TELEGRAM_CHAT_ID is not set with a warning', () => {
+    it('returns false when TELEGRAM_CHAT_ID is not set (fails closed)', () => {
       delete process.env.TELEGRAM_CHAT_ID;
       const ctx: any = { chat: { id: 12345 } };
-      expect(isAuthorizedChat(ctx)).toBe(true);
+      expect(isAuthorizedChat(ctx)).toBe(false);
     });
 
     it('returns true when chat.id matches TELEGRAM_CHAT_ID', () => {

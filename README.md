@@ -27,6 +27,8 @@ NexKan is built for developers and self-hosters who value data ownership and sim
 
 NexKan includes an integrated Telegram bot (built with `grammy`) that serves as a mobile client. Access to the bot is restricted to your authorized account or group chat ID via the `TELEGRAM_CHAT_ID` environment variable.
 
+> ⚠️ **Configuration Notice**: When `TELEGRAM_BOT_TOKEN` is set, `TELEGRAM_CHAT_ID`, `TELEGRAM_WEBHOOK_URL`, and `TELEGRAM_WEBHOOK_SECRET` are all required. The server validates this on boot and fails closed if any are missing.
+
 ### Task Commands
 | Command | Parameter | Action |
 |---------|-----------|--------|

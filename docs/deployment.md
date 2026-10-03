@@ -37,12 +37,14 @@ HOST_PORT=8092
 # Timezone (e.g. Europe/Berlin, Asia/Bangkok)
 TZ=UTC
 
-# Telegram bot (required for bot/notifications; leave blank to disable)
+# Telegram bot (optional — leave TELEGRAM_BOT_TOKEN blank to disable)
+# If TELEGRAM_BOT_TOKEN is set, TELEGRAM_CHAT_ID, TELEGRAM_WEBHOOK_URL,
+# and TELEGRAM_WEBHOOK_SECRET are strictly required (backend exits on boot if missing):
 TELEGRAM_BOT_TOKEN=1234567890:ABCdef...
 TELEGRAM_CHAT_ID=987654321
 TELEGRAM_WEBHOOK_URL=https://yourdomain.com/api/webhooks/telegram
 
-# Generate with: openssl rand -hex 32
+# Generate secrets with: openssl rand -hex 32
 TELEGRAM_WEBHOOK_SECRET=<64-char-hex>
 CRON_SECRET=<64-char-hex>
 

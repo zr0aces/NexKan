@@ -68,8 +68,8 @@ export class TaskStore {
     this.storageProvider.watch(async (eventType, filename) => {
       if (!filename.endsWith('.md')) return;
 
-      const id = filename.split('-')[0];
-      if (!id || id.length !== 8) return;
+      if (filename.length < 12 || filename[8] !== '-') return;
+      const id = filename.slice(0, 8);
 
       try {
         if (await this.storageProvider.exists(filename)) {
@@ -77,7 +77,9 @@ export class TaskStore {
           const task = parseTask(content, filename);
           this.cache.set(id, { task, filePath: filename });
         } else {
-          this.cache.delete(id);
+          if (this.cache.get(id)?.filePath === filename) {
+            this.cache.delete(id);
+          }
         }
       } catch (err) {
         // Silently skip if concurrent read/delete issues

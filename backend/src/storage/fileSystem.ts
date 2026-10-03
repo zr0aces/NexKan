@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { StorageProvider } from './types';
 
 export class FileSystemStorageProvider implements StorageProvider {
@@ -30,7 +31,35 @@ export class FileSystemStorageProvider implements StorageProvider {
   async write(filename: string, content: string): Promise<void> {
     await fs.promises.mkdir(this.rootDir, { recursive: true });
     const filePath = path.join(this.rootDir, filename);
-    await fs.promises.writeFile(filePath, content, 'utf-8');
+    const tempFilename = `.${filename}.${crypto.randomUUID()}.tmp`;
+    const tempFilePath = path.join(this.rootDir, tempFilename);
+
+    await fs.promises.writeFile(tempFilePath, content, 'utf-8');
+
+    try {
+      try {
+        const stats = await fs.promises.stat(filePath);
+        try {
+          await fs.promises.chmod(tempFilePath, stats.mode);
+        } catch (err: any) {
+          if (err.code !== 'EPERM') throw err;
+        }
+        try {
+          await fs.promises.chown(tempFilePath, stats.uid, stats.gid);
+        } catch (err: any) {
+          if (err.code !== 'EPERM') throw err;
+        }
+      } catch (err: any) {
+        if (err.code !== 'ENOENT') throw err;
+      }
+
+      await fs.promises.rename(tempFilePath, filePath);
+    } catch (err) {
+      try {
+        await fs.promises.unlink(tempFilePath);
+      } catch {}
+      throw err;
+    }
   }
 
   async delete(filename: string): Promise<void> {

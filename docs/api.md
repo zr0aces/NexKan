@@ -253,7 +253,10 @@ Converts a scratchpad note to a Kanban card and deletes the original note. The f
 POST /api/webhooks/telegram
 ```
 
-Telegram delivers bot updates here. Validated by `X-Telegram-Bot-Api-Secret-Token` header (set in `TELEGRAM_WEBHOOK_SECRET`). No nginx basic auth on this endpoint.
+Telegram delivers bot updates here. Validated by `X-Telegram-Bot-Api-Secret-Token` header (configured in `TELEGRAM_WEBHOOK_SECRET`). No nginx basic auth on this endpoint.
+
+- **Authentication:** `TELEGRAM_WEBHOOK_SECRET` is required; requests without a matching secret header return `401 Unauthorized` (fail-closed, C9).
+- **Body Limit:** Up to 1 MiB (D3) to accommodate long multi-byte messages; authenticated requests only. Standard API routes enforce a 10 KiB limit.
 
 ---
 
