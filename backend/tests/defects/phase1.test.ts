@@ -9,7 +9,7 @@ import { Task } from '@nexkan/shared';
 import { serializeTask } from '../../src/tasks/parser';
 import * as notifier from '../../src/telegram/notifier';
 import { getBot } from '../../src/telegram/bot';
-import { createApp } from '../../src/app';
+import { createApp, buildApp } from '../../src/app';
 import { NoteStore } from '../../src/scratchpad/store';
 
 function sleep(ms: number): Promise<void> {
@@ -243,10 +243,11 @@ describe('Phase 1 Defect and Security Fixes (F1-F6, D1-D3)', () => {
   // D3: 1 MiB webhook body limit vs 10 KiB global limit
   describe('D3: Body size limits (1 MiB webhook vs 10 KiB standard)', () => {
     let tmpDir: string;
+    let fastifyApp: any;
     let app: any;
     const originalEnv = process.env;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexkan-d3-test-'));
       process.env = {
         ...originalEnv,
@@ -256,10 +257,13 @@ describe('Phase 1 Defect and Security Fixes (F1-F6, D1-D3)', () => {
       };
       const taskStore = new TaskStore(new FileSystemStorageProvider(path.join(tmpDir, 'tasks')));
       const noteStore = new NoteStore(new FileSystemStorageProvider(path.join(tmpDir, 'notes')));
-      app = createApp(taskStore, noteStore);
+      fastifyApp = buildApp(taskStore, noteStore);
+      await fastifyApp.ready();
+      app = fastifyApp.server;
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+      if (fastifyApp) await fastifyApp.close();
       fs.rmSync(tmpDir, { recursive: true, force: true });
       process.env = originalEnv;
       jest.restoreAllMocks();

@@ -1,60 +1,73 @@
 import request from 'supertest';
-import express from 'express';
+import fastify, { FastifyInstance } from 'fastify';
 import { webhookAuth, cronAuth } from '../../src/telegram/middleware';
 
-function makeApp(middleware: any) {
-  const app = express();
-  app.use(middleware);
-  app.get('/test', (_req, res) => res.json({ ok: true }));
+async function makeApp(hook: any): Promise<FastifyInstance> {
+  const app = fastify();
+  app.addHook('onRequest', hook);
+  app.get('/test', async () => ({ ok: true }));
+  await app.ready();
   return app;
 }
 
 describe('webhookAuth', () => {
+  let app: FastifyInstance;
+
   beforeEach(() => {
     process.env.TELEGRAM_WEBHOOK_SECRET = 'test-secret';
   });
 
+  afterEach(async () => {
+    if (app) await app.close();
+  });
+
   it('returns 401 when no secret is configured', async () => {
     delete process.env.TELEGRAM_WEBHOOK_SECRET;
-    const app = makeApp(webhookAuth);
-    const res = await request(app).get('/test');
+    app = await makeApp(webhookAuth);
+    const res = await request(app.server).get('/test');
     expect(res.status).toBe(401);
   });
 
   it('returns 401 when header is missing', async () => {
-    const app = makeApp(webhookAuth);
-    const res = await request(app).get('/test');
+    app = await makeApp(webhookAuth);
+    const res = await request(app.server).get('/test');
     expect(res.status).toBe(401);
   });
 
   it('returns 401 when header is wrong', async () => {
-    const app = makeApp(webhookAuth);
-    const res = await request(app).get('/test').set('X-Telegram-Bot-Api-Secret-Token', 'wrong');
+    app = await makeApp(webhookAuth);
+    const res = await request(app.server).get('/test').set('X-Telegram-Bot-Api-Secret-Token', 'wrong');
     expect(res.status).toBe(401);
   });
 
-  it('calls next when header matches', async () => {
-    const app = makeApp(webhookAuth);
-    const res = await request(app).get('/test').set('X-Telegram-Bot-Api-Secret-Token', 'test-secret');
+  it('allows request when header matches', async () => {
+    app = await makeApp(webhookAuth);
+    const res = await request(app.server).get('/test').set('X-Telegram-Bot-Api-Secret-Token', 'test-secret');
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
   });
 });
 
 describe('cronAuth', () => {
+  let app: FastifyInstance;
+
   beforeEach(() => {
     process.env.CRON_SECRET = 'cron-secret';
   });
 
+  afterEach(async () => {
+    if (app) await app.close();
+  });
+
   it('returns 401 when header is missing', async () => {
-    const app = makeApp(cronAuth);
-    const res = await request(app).get('/test');
+    app = await makeApp(cronAuth);
+    const res = await request(app.server).get('/test');
     expect(res.status).toBe(401);
   });
 
-  it('calls next when X-Cron-Secret matches', async () => {
-    const app = makeApp(cronAuth);
-    const res = await request(app).get('/test').set('X-Cron-Secret', 'cron-secret');
+  it('allows request when X-Cron-Secret matches', async () => {
+    app = await makeApp(cronAuth);
+    const res = await request(app.server).get('/test').set('X-Cron-Secret', 'cron-secret');
     expect(res.status).toBe(200);
   });
 });

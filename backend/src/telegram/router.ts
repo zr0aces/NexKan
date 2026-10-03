@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { FastifyPluginAsync } from 'fastify';
 import { webhookAuth, cronAuth } from './middleware';
 import { getBot } from './bot';
 import { checkAndNotify } from './notifier';
@@ -18,64 +18,96 @@ import { isAuthorizedChat } from './utils';
 import { TaskStore } from '../tasks/store';
 import { NoteStore } from '../scratchpad/store';
 
-export function createTelegramRouter(taskStore: TaskStore, noteStore: NoteStore): Router {
-  const router = Router();
+export interface TelegramRoutesOptions {
+  taskStore: TaskStore;
+  noteStore: NoteStore;
+}
 
-  router.post('/webhooks/telegram', webhookAuth, async (req: Request, res: Response) => {
+export const telegramRoutes: FastifyPluginAsync<TelegramRoutesOptions> = async (fastify, options) => {
+  const { taskStore } = options;
+
+  let cb: any;
+  if (process.env.TELEGRAM_BOT_TOKEN) {
     try {
-      await webhookCallback(getBot(), 'express')(req, res);
-    } catch (err) {
-      console.error('Webhook error:', err);
+      cb = webhookCallback(getBot(), 'fastify');
+    } catch {
+      cb = null;
+    }
+  }
+
+  fastify.post(
+    '/webhooks/telegram',
+    {
+      onRequest: [webhookAuth],
+      bodyLimit: 1048576,
+    },
+    async (request, reply) => {
       try {
-        const chatId = process.env.TELEGRAM_CHAT_ID;
-        if (chatId) {
-          const errMsg = err instanceof Error ? err.message : String(err);
-          await getBot().api.sendMessage(
-            chatId,
-            `⚠️ **Webhook Delivery Error:**\n\`${errMsg}\``,
-            { parse_mode: 'Markdown' }
-          ).catch(() => {});
+        if (!cb) {
+          cb = webhookCallback(getBot(), 'fastify');
         }
-      } catch (sendErr) {
-        console.error('Failed to send webhook error notification to Telegram:', sendErr);
+        await cb(request, reply);
+      } catch (err) {
+        console.error('Webhook error:', err);
+        try {
+          const chatId = process.env.TELEGRAM_CHAT_ID;
+          if (chatId) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            await getBot()
+              .api.sendMessage(
+                chatId,
+                `⚠️ **Webhook Delivery Error:**\n\`${errMsg}\``,
+                { parse_mode: 'Markdown' }
+              )
+              .catch(() => {});
+          }
+        } catch (sendErr) {
+          console.error('Failed to send webhook error notification to Telegram:', sendErr);
+        }
+        if (!reply.sent) {
+          return reply.code(200).send();
+        }
       }
-      if (!res.headersSent) res.sendStatus(200);
     }
-  });
+  );
 
-  router.post('/notifications/check', cronAuth, async (_req: Request, res: Response) => {
-    try {
-      await checkAndNotify(taskStore);
-      res.json({ ok: true });
-    } catch (err) {
-      console.error('Notification check error:', err);
-      res.status(500).json({ error: 'Notification check failed' });
+  fastify.post(
+    '/notifications/check',
+    {
+      onRequest: [cronAuth],
+    },
+    async (_request, reply) => {
+      try {
+        await checkAndNotify(taskStore);
+        return reply.code(200).send({ ok: true });
+      } catch (err) {
+        console.error('Notification check error:', err);
+        return reply.code(500).send({ error: 'Notification check failed' });
+      }
     }
-  });
+  );
 
-  router.get('/telegram/status', async (_req: Request, res: Response) => {
+  fastify.get('/telegram/status', async (_request, reply) => {
     try {
       const bot = getBot();
       const me = await bot.api.getMe();
-      res.json({ ok: true, bot: me.username });
-    } catch (err) {
-      res.status(503).json({ ok: false, error: 'Bot unreachable' });
+      return reply.code(200).send({ ok: true, bot: me.username });
+    } catch {
+      return reply.code(503).send({ ok: false, error: 'Bot unreachable' });
     }
   });
 
-  router.post('/telegram/test', async (_req: Request, res: Response) => {
+  fastify.post('/telegram/test', async (_request, reply) => {
     try {
       const chatId = process.env.TELEGRAM_CHAT_ID;
-      if (!chatId) return void res.status(400).json({ error: 'TELEGRAM_CHAT_ID not set' });
+      if (!chatId) return reply.code(400).send({ error: 'TELEGRAM_CHAT_ID not set' });
       await getBot().api.sendMessage(chatId, '🧪 NexKan test notification');
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ error: 'Failed to send test message' });
+      return reply.code(200).send({ ok: true });
+    } catch {
+      return reply.code(500).send({ error: 'Failed to send test message' });
     }
   });
-
-  return router;
-}
+};
 
 export function setupBotCommands(taskStore: TaskStore, noteStore: NoteStore): void {
   const bot = getBot();

@@ -5,6 +5,7 @@ import { NoteStore } from './scratchpad/store';
 import { FileSystemStorageProvider } from './storage/fileSystem';
 import { noteRoutes } from './scratchpad/router';
 import { taskRoutes } from './tasks/router';
+import { telegramRoutes } from './telegram/router';
 
 export function buildApp(taskStore: TaskStore, noteStore: NoteStore): FastifyInstance {
   const logLevel = process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'test' ? 'silent' : 'info');
@@ -14,6 +15,16 @@ export function buildApp(taskStore: TaskStore, noteStore: NoteStore): FastifyIns
       ignoreTrailingSlash: true,
     },
     logger: logLevel === 'silent' ? false : { level: logLevel },
+    frameworkErrors: (error: FastifyError, _request: any, reply: any) => {
+      if (error.code === 'FST_ERR_MAX_PARAM_LENGTH' || error.code === 'FST_ERR_BAD_URL') {
+        return reply.code(404).send({ error: 'Not found' });
+      }
+      const status = error.statusCode || 500;
+      if (status >= 500) {
+        return reply.code(status).send({ error: 'Internal server error' });
+      }
+      return reply.code(status).send({ error: error.message });
+    },
   });
 
   // Fastify Content-Type parsers:
@@ -59,6 +70,7 @@ export function buildApp(taskStore: TaskStore, noteStore: NoteStore): FastifyIns
   // Register modules
   app.register(noteRoutes, { prefix: '/api/notes', noteStore, taskStore });
   app.register(taskRoutes, { prefix: '/api/tasks', taskStore });
+  app.register(telegramRoutes, { prefix: '/api', taskStore, noteStore });
 
   return app;
 }
