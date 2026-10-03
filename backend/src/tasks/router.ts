@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { TaskStore, NotFoundError } from './store';
 import { TaskService } from './service';
@@ -32,113 +32,136 @@ const OrderSchema = z.object({
   position: z.number().int().min(0),
 });
 
-export function createTaskRouter(taskStore: TaskStore): Router {
-  const router = Router();
-  const taskService = new TaskService(taskStore);
-
-  router.get('/', async (req: Request, res: Response) => {
-    try {
-      const filters: TaskFilters = {
-        status: req.query.status as string | undefined,
-        tags: req.query.tags as string | undefined,
-        priority: req.query.priority as any,
-        search: req.query.search as string | undefined,
-        sort: req.query.sort as string | undefined,
-        overdue: req.query.overdue === 'true',
-        due_today: req.query.due_today === 'true',
-        due_tomorrow: req.query.due_tomorrow === 'true',
-      };
-      const tasks = await taskService.listTasks(filters);
-      res.json(tasks);
-    } catch (err) {
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.get('/:id', async (req: Request, res: Response) => {
-    try {
-      const task = await taskService.getTask(req.params.id);
-      if (!task) return void res.status(404).json({ error: 'Task not found' });
-      res.json(task);
-    } catch (err) {
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.post('/', async (req: Request, res: Response) => {
-    const parsed = CreateTaskSchema.safeParse(req.body);
-    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-    try {
-      const task = await taskService.createTask(parsed.data);
-      res.status(201).json(task);
-    } catch (err) {
-      if (err instanceof Error && err.message.includes('due_date')) {
-        return void res.status(400).json({ error: err.message });
-      }
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.put('/:id', async (req: Request, res: Response) => {
-    const parsed = UpdateTaskSchema.safeParse(req.body);
-    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-    try {
-      const task = await taskService.updateTask(req.params.id, parsed.data);
-      res.json(task);
-    } catch (err) {
-      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
-        return void res.status(404).json({ error: err.message });
-      }
-      if (err instanceof Error && err.message.includes('due_date')) {
-        return void res.status(400).json({ error: err.message });
-      }
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.patch('/:id/status', async (req: Request, res: Response) => {
-    const parsed = StatusSchema.safeParse(req.body);
-    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-    try {
-      const task = await taskService.updateTaskStatus(req.params.id, parsed.data.status, parsed.data.due_date);
-      res.json(task);
-    } catch (err) {
-      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
-        return void res.status(404).json({ error: err.message });
-      }
-      if (err instanceof Error && err.message.includes('due_date')) {
-        return void res.status(400).json({ error: err.message });
-      }
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.patch('/:id/order', async (req: Request, res: Response) => {
-    const parsed = OrderSchema.safeParse(req.body);
-    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-    try {
-      const task = await taskService.updateOrder(req.params.id, parsed.data.position);
-      res.json(task);
-    } catch (err) {
-      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
-        return void res.status(404).json({ error: err.message });
-      }
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.delete('/:id', async (req: Request, res: Response) => {
-    try {
-      await taskService.deleteTask(req.params.id);
-      res.status(204).send();
-    } catch (err) {
-      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
-        return void res.status(404).json({ error: err.message });
-      }
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  return router;
+interface TaskQuery {
+  status?: string;
+  tags?: string;
+  priority?: string;
+  search?: string;
+  sort?: string;
+  overdue?: string;
+  due_today?: string;
+  due_tomorrow?: string;
 }
 
+export interface TaskRoutesOptions {
+  taskStore: TaskStore;
+}
+
+export const taskRoutes: FastifyPluginAsync<TaskRoutesOptions> = async (fastify, options) => {
+  const { taskStore } = options;
+  const taskService = new TaskService(taskStore);
+
+  fastify.get<{ Querystring: TaskQuery }>('/', async (request, reply) => {
+    try {
+      const query = request.query;
+      const filters: TaskFilters = {
+        status: query.status as string | undefined,
+        tags: query.tags as string | undefined,
+        priority: query.priority as any,
+        search: query.search as string | undefined,
+        sort: query.sort as string | undefined,
+        overdue: query.overdue === 'true',
+        due_today: query.due_today === 'true',
+        due_tomorrow: query.due_tomorrow === 'true',
+      };
+      const tasks = await taskService.listTasks(filters);
+      return reply.code(200).send(tasks);
+    } catch {
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.get<{ Params: { id: string } }>('/:id', async (request, reply) => {
+    try {
+      const task = await taskService.getTask(request.params.id);
+      if (!task) {
+        return reply.code(404).send({ error: 'Task not found' });
+      }
+      return reply.code(200).send(task);
+    } catch {
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.post('/', async (request, reply) => {
+    const parsed = CreateTaskSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const task = await taskService.createTask(parsed.data);
+      return reply.code(201).send(task);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('due_date')) {
+        return reply.code(400).send({ error: err.message });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.put<{ Params: { id: string } }>('/:id', async (request, reply) => {
+    const parsed = UpdateTaskSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const task = await taskService.updateTask(request.params.id, parsed.data);
+      return reply.code(200).send(task);
+    } catch (err) {
+      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+        return reply.code(404).send({ error: err.message });
+      }
+      if (err instanceof Error && err.message.includes('due_date')) {
+        return reply.code(400).send({ error: err.message });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.patch<{ Params: { id: string } }>('/:id/status', async (request, reply) => {
+    const parsed = StatusSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const task = await taskService.updateTaskStatus(request.params.id, parsed.data.status, parsed.data.due_date);
+      return reply.code(200).send(task);
+    } catch (err) {
+      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+        return reply.code(404).send({ error: err.message });
+      }
+      if (err instanceof Error && err.message.includes('due_date')) {
+        return reply.code(400).send({ error: err.message });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.patch<{ Params: { id: string } }>('/:id/order', async (request, reply) => {
+    const parsed = OrderSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const task = await taskService.updateOrder(request.params.id, parsed.data.position);
+      return reply.code(200).send(task);
+    } catch (err) {
+      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+        return reply.code(404).send({ error: err.message });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.delete<{ Params: { id: string } }>('/:id', async (request, reply) => {
+    try {
+      await taskService.deleteTask(request.params.id);
+      return reply.code(204).send();
+    } catch (err) {
+      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+        return reply.code(404).send({ error: err.message });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+};

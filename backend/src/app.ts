@@ -4,6 +4,7 @@ import { TaskStore } from './tasks/store';
 import { NoteStore } from './scratchpad/store';
 import { FileSystemStorageProvider } from './storage/fileSystem';
 import { noteRoutes } from './scratchpad/router';
+import { taskRoutes } from './tasks/router';
 
 export function buildApp(taskStore: TaskStore, noteStore: NoteStore): FastifyInstance {
   const logLevel = process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'test' ? 'silent' : 'info');
@@ -55,8 +56,9 @@ export function buildApp(taskStore: TaskStore, noteStore: NoteStore): FastifyIns
     noteStore.close();
   });
 
-  // Register notes module
+  // Register modules
   app.register(noteRoutes, { prefix: '/api/notes', noteStore, taskStore });
+  app.register(taskRoutes, { prefix: '/api/tasks', taskStore });
 
   return app;
 }

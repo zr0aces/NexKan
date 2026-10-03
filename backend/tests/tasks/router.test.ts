@@ -5,8 +5,12 @@ import * as os from 'os';
 import { serializeTask } from '../../src/tasks/parser';
 import { Task } from '@nexkan/shared';
 
+import http from 'http';
+import { FastifyInstance } from 'fastify';
+
 let tmpDir: string;
-let app: typeof import('../../src/app').default;
+let app: FastifyInstance;
+let server: http.Server;
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -33,10 +37,14 @@ function writeTask(task: Task): void {
 beforeAll(async () => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexkan-router-test-'));
   process.env.DATA_DIR = tmpDir;
-  app = (await import('../../src/app')).default;
+  const { buildApp, defaultTaskStore, defaultNoteStore } = await import('../../src/app');
+  app = buildApp(defaultTaskStore, defaultNoteStore);
+  await app.ready();
+  server = app.server;
 });
 
-afterAll(() => {
+afterAll(async () => {
+  await app.close();
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
@@ -48,7 +56,7 @@ afterEach(async () => {
 
 describe('GET /api/tasks', () => {
   it('returns 200 with empty array', async () => {
-    const res = await request(app).get('/api/tasks');
+    const res = await request(server).get('/api/tasks');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
@@ -56,7 +64,7 @@ describe('GET /api/tasks', () => {
   it('returns tasks sorted by sort_order', async () => {
     writeTask(makeTask({ id: 'aaa11111', title: 'Task A', sort_order: 2 }));
     writeTask(makeTask({ id: 'bbb22222', title: 'Task B', sort_order: 1 }));
-    const res = await request(app).get('/api/tasks?sort=sort_order:asc');
+    const res = await request(server).get('/api/tasks?sort=sort_order:asc');
     expect(res.status).toBe(200);
     expect(res.body[0].id).toBe('bbb22222');
     expect(res.body[1].id).toBe('aaa11111');
@@ -65,7 +73,7 @@ describe('GET /api/tasks', () => {
   it('filters by ?status=', async () => {
     writeTask(makeTask({ id: 'aaa11111', title: 'Todo Task', status: 'todo' }));
     writeTask(makeTask({ id: 'bbb22222', title: 'Done Task', status: 'done', due_date: undefined }));
-    const res = await request(app).get('/api/tasks?status=todo');
+    const res = await request(server).get('/api/tasks?status=todo');
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
     expect(res.body[0].id).toBe('aaa11111');
@@ -74,7 +82,7 @@ describe('GET /api/tasks', () => {
   it('filters by ?search=', async () => {
     writeTask(makeTask({ id: 'aaa11111', title: 'Buy milk' }));
     writeTask(makeTask({ id: 'bbb22222', title: 'Deploy server' }));
-    const res = await request(app).get('/api/tasks?search=milk');
+    const res = await request(server).get('/api/tasks?search=milk');
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
     expect(res.body[0].id).toBe('aaa11111');
@@ -84,20 +92,20 @@ describe('GET /api/tasks', () => {
 describe('GET /api/tasks/:id', () => {
   it('returns 200 with task', async () => {
     writeTask(makeTask({ id: 'abc12345', title: 'My Task' }));
-    const res = await request(app).get('/api/tasks/abc12345');
+    const res = await request(server).get('/api/tasks/abc12345');
     expect(res.status).toBe(200);
     expect(res.body.id).toBe('abc12345');
   });
 
   it('returns 404 when not found', async () => {
-    const res = await request(app).get('/api/tasks/notexist');
+    const res = await request(server).get('/api/tasks/notexist');
     expect(res.status).toBe(404);
   });
 });
 
 describe('POST /api/tasks', () => {
   it('creates a task and returns 201', async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post('/api/tasks')
       .send({ title: 'New Task', due_date: '2099-12-31', description: 'Do it.' });
     expect(res.status).toBe(201);
@@ -107,7 +115,7 @@ describe('POST /api/tasks', () => {
   });
 
   it('returns 400 when title is missing', async () => {
-    const res = await request(app).post('/api/tasks').send({ description: 'No title' });
+    const res = await request(server).post('/api/tasks').send({ description: 'No title' });
     expect(res.status).toBe(400);
   });
 });
@@ -115,7 +123,7 @@ describe('POST /api/tasks', () => {
 describe('PUT /api/tasks/:id', () => {
   it('updates a task and returns 200', async () => {
     writeTask(makeTask({ id: 'abc12345', title: 'Original' }));
-    const res = await request(app)
+    const res = await request(server)
       .put('/api/tasks/abc12345')
       .send({ title: 'Updated' });
     expect(res.status).toBe(200);
@@ -123,7 +131,7 @@ describe('PUT /api/tasks/:id', () => {
   });
 
   it('returns 404 when task not found', async () => {
-    const res = await request(app).put('/api/tasks/notexist').send({ title: 'x' });
+    const res = await request(server).put('/api/tasks/notexist').send({ title: 'x' });
     expect(res.status).toBe(404);
   });
 });
@@ -131,7 +139,7 @@ describe('PUT /api/tasks/:id', () => {
 describe('PATCH /api/tasks/:id/status', () => {
   it('moves task to new status', async () => {
     writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'done' }));
-    const res = await request(app)
+    const res = await request(server)
       .patch('/api/tasks/abc12345/status')
       .send({ status: 'todo', due_date: '2099-12-31' });
     expect(res.status).toBe(200);
@@ -140,7 +148,7 @@ describe('PATCH /api/tasks/:id/status', () => {
 
   it('returns 400 when moving to todo without due_date', async () => {
     writeTask(makeTask({ id: 'abc12345', title: 'Task', status: 'done', due_date: undefined }));
-    const res = await request(app)
+    const res = await request(server)
       .patch('/api/tasks/abc12345/status')
       .send({ status: 'todo' });
     expect(res.status).toBe(400);
@@ -148,14 +156,14 @@ describe('PATCH /api/tasks/:id/status', () => {
 
   it('returns 400 for invalid status', async () => {
     writeTask(makeTask({ id: 'abc12345', title: 'Task' }));
-    const res = await request(app)
+    const res = await request(server)
       .patch('/api/tasks/abc12345/status')
       .send({ status: 'invalid' });
     expect(res.status).toBe(400);
   });
 
   it('returns 404 when task not found', async () => {
-    const res = await request(app)
+    const res = await request(server)
       .patch('/api/tasks/notexist/status')
       .send({ status: 'done' });
     expect(res.status).toBe(404);
@@ -167,7 +175,7 @@ describe('PATCH /api/tasks/:id/order', () => {
     writeTask(makeTask({ id: 'aaa11111', title: 'A', status: 'todo', sort_order: 1 }));
     writeTask(makeTask({ id: 'bbb22222', title: 'B', status: 'todo', sort_order: 2 }));
     writeTask(makeTask({ id: 'abc12345', title: 'C', status: 'todo', sort_order: 3 }));
-    const res = await request(app)
+    const res = await request(server)
       .patch('/api/tasks/abc12345/order')
       .send({ position: 0 });
     expect(res.status).toBe(200);
@@ -178,14 +186,14 @@ describe('PATCH /api/tasks/:id/order', () => {
 describe('DELETE /api/tasks/:id', () => {
   it('deletes a task and returns 204', async () => {
     writeTask(makeTask({ id: 'abc12345', title: 'To Delete' }));
-    const res = await request(app).delete('/api/tasks/abc12345');
+    const res = await request(server).delete('/api/tasks/abc12345');
     expect(res.status).toBe(204);
-    const check = await request(app).get('/api/tasks/abc12345');
+    const check = await request(server).get('/api/tasks/abc12345');
     expect(check.status).toBe(404);
   });
 
   it('returns 404 when task not found', async () => {
-    const res = await request(app).delete('/api/tasks/notexist');
+    const res = await request(server).delete('/api/tasks/notexist');
     expect(res.status).toBe(404);
   });
 });
