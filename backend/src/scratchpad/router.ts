@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { NoteStore, NotFoundError } from './store';
 import { NoteConverter } from './converter';
@@ -12,66 +12,82 @@ const ConvertSchema = z.object({
   status: z.enum(['todo', 'in-progress', 'done']).optional(),
 });
 
-export function createNoteRouter(noteStore: NoteStore, taskStore: TaskStore): Router {
-  const router = Router();
+export interface NoteRoutesOptions {
+  noteStore: NoteStore;
+  taskStore: TaskStore;
+}
 
-  router.get('/', async (_req: Request, res: Response) => {
-    try {
-      res.json(await noteStore.readAll());
-    } catch {
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.post('/', async (req: Request, res: Response) => {
-    const parsed = ContentSchema.safeParse(req.body);
-    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-    try {
-      res.status(201).json(await noteStore.create(parsed.data.content));
-    } catch {
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.patch('/:id', async (req: Request, res: Response) => {
-    const parsed = ContentSchema.safeParse(req.body);
-    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
-    try {
-      res.json(await noteStore.update(req.params.id, parsed.data.content));
-    } catch (err) {
-      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  router.delete('/:id', async (req: Request, res: Response) => {
-    try {
-      await noteStore.deleteNote(req.params.id);
-      res.status(204).send();
-    } catch (err) {
-      if (err instanceof NotFoundError) return void res.status(404).json({ error: err.message });
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
+export const noteRoutes: FastifyPluginAsync<NoteRoutesOptions> = async (fastify, options) => {
+  const { noteStore, taskStore } = options;
   const converter = new NoteConverter(noteStore, taskStore);
 
-  router.post('/:id/convert', async (req: Request, res: Response) => {
-    const parsed = ConvertSchema.safeParse(req.body);
-    if (!parsed.success) return void res.status(400).json({ error: parsed.error.flatten() });
+  fastify.get('/', async (_request, reply) => {
     try {
-      const task = await converter.convert(req.params.id, parsed.data);
-      res.status(201).json(task);
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        return void res.status(404).json({ error: err.message });
-      }
-      if (err instanceof Error && (err.message.includes('first line') || err.message.includes('due_date'))) {
-        return void res.status(400).json({ error: err.message });
-      }
-      res.status(500).json({ error: 'Internal server error' });
+      const notes = await noteStore.readAll();
+      return reply.code(200).send(notes);
+    } catch {
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 
-  return router;
-}
+  fastify.post('/', async (request, reply) => {
+    const parsed = ContentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const note = await noteStore.create(parsed.data.content);
+      return reply.code(201).send(note);
+    } catch {
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.patch<{ Params: { id: string } }>('/:id', async (request, reply) => {
+    const parsed = ContentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const note = await noteStore.update(request.params.id, parsed.data.content);
+      return reply.code(200).send(note);
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        return reply.code(404).send({ error: err.message });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.delete<{ Params: { id: string } }>('/:id', async (request, reply) => {
+    try {
+      await noteStore.deleteNote(request.params.id);
+      return reply.code(204).send();
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        return reply.code(404).send({ error: err.message });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  fastify.post<{ Params: { id: string } }>('/:id/convert', async (request, reply) => {
+    const parsed = ConvertSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const task = await converter.convert(request.params.id, parsed.data);
+      return reply.code(201).send(task);
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        return reply.code(404).send({ error: err.message });
+      }
+      if (err instanceof Error && (err.message.includes('first line') || err.message.includes('due_date'))) {
+        return reply.code(400).send({ error: err.message });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+};
+

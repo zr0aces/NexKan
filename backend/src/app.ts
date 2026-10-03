@@ -1,21 +1,69 @@
-import express from 'express';
-import { createTaskRouter } from './tasks/router';
-import { createNoteRouter } from './scratchpad/router';
-import { createTelegramRouter } from './telegram/router';
-import { webhookAuth } from './telegram/middleware';
-import { FileSystemStorageProvider } from './storage/fileSystem';
+import fastify, { FastifyInstance, FastifyError } from 'fastify';
+import * as path from 'path';
 import { TaskStore } from './tasks/store';
 import { NoteStore } from './scratchpad/store';
-import * as path from 'path';
+import { FileSystemStorageProvider } from './storage/fileSystem';
+import { noteRoutes } from './scratchpad/router';
 
-export function createApp(taskStore: TaskStore, noteStore: NoteStore): express.Express {
-  const app = express();
-  app.use('/api/webhooks/telegram', webhookAuth, express.json({ limit: '1mb' }));
-  app.use(express.json({ limit: '10kb' }));
-  app.use('/api/tasks', createTaskRouter(taskStore));
-  app.use('/api/notes', createNoteRouter(noteStore, taskStore));
-  app.use('/api', createTelegramRouter(taskStore, noteStore));
+export function buildApp(taskStore: TaskStore, noteStore: NoteStore): FastifyInstance {
+  const logLevel = process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'test' ? 'silent' : 'info');
+  const app = fastify({
+    bodyLimit: 10240,
+    routerOptions: {
+      ignoreTrailingSlash: true,
+    },
+    logger: logLevel === 'silent' ? false : { level: logLevel },
+  });
+
+  // Fastify Content-Type parsers:
+  // Remove text/plain so only application/json is accepted
+  app.removeContentTypeParser('text/plain');
+
+  // Custom application/json parser to handle empty bodies with Content-Type: application/json (e.g. DELETE)
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
+    if (body === '' || body === undefined || body === null) {
+      return done(null, undefined);
+    }
+    const bodyStr = typeof body === 'string' ? body : body.toString('utf-8');
+    app.getDefaultJsonParser('error', 'error')(req, bodyStr, done);
+  });
+
+  // Framework error handler:
+  // Map errors without a statusCode to 500 { error: 'Internal server error' }.
+  // Framework errors (e.g. FST_ERR_*, JSON syntax) keep their statusCode and return { error: message }.
+  app.setErrorHandler((error: FastifyError, _request, reply) => {
+    const status = error.statusCode || 500;
+    if (status >= 500) {
+      return reply.code(status).send({ error: 'Internal server error' });
+    }
+    return reply.code(status).send({ error: error.message });
+  });
+
+  // Not found handler: returns 404 JSON
+  app.setNotFoundHandler((_request, reply) => {
+    return reply.code(404).send({ error: 'Not found' });
+  });
+
+  // Healthcheck endpoint (D5)
+  app.get('/healthz', async (_request, reply) => {
+    return reply.code(200).send({ status: 'ok' });
+  });
+
+  // Close hook for store resources
+  app.addHook('onClose', async () => {
+    taskStore.close();
+    noteStore.close();
+  });
+
+  // Register notes module
+  app.register(noteRoutes, { prefix: '/api/notes', noteStore, taskStore });
+
   return app;
+}
+
+// Backward compatibility helper during migration phases
+export function createApp(taskStore: TaskStore, noteStore: NoteStore): any {
+  return buildApp(taskStore, noteStore);
 }
 
 // Production / Default exports for running the server and backward compatibility:
@@ -25,5 +73,5 @@ const getScratchpadDir = () => process.env.SCRATCHPAD_DIR || path.join(process.c
 export const defaultTaskStore = new TaskStore(new FileSystemStorageProvider(getTaskDir()));
 export const defaultNoteStore = new NoteStore(new FileSystemStorageProvider(getScratchpadDir()));
 
-const app = createApp(defaultTaskStore, defaultNoteStore);
-export default app;
+export const defaultApp = buildApp(defaultTaskStore, defaultNoteStore);
+export default defaultApp;

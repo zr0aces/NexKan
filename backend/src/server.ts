@@ -29,7 +29,11 @@ async function start(): Promise<void> {
     console.warn('TELEGRAM_BOT_TOKEN not set — Telegram features disabled');
   }
 
-  app.listen(port, () => {
+  app.listen({ port, host: '0.0.0.0' }, (err) => {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
     console.log(`NexKan backend running on port ${port}`);
   });
 }

@@ -73,9 +73,11 @@ export async function createContractTestContext(): Promise<ContractTestContext> 
 
   let server: http.Server;
 
+  let fastifyApp: any;
+
   if (isFastify) {
     const { buildApp } = require('../../src/app');
-    const fastifyApp = await buildApp(taskStore, noteStore);
+    fastifyApp = await buildApp(taskStore, noteStore);
     await fastifyApp.ready();
     server = fastifyApp.server;
   } else {
@@ -103,11 +105,15 @@ export async function createContractTestContext(): Promise<ContractTestContext> 
     writeTask,
     writeNote,
     close: async () => {
-      taskStore.close();
-      noteStore.close();
-      await new Promise<void>((resolve) => {
-        server.close(() => resolve());
-      });
+      if (fastifyApp) {
+        await fastifyApp.close();
+      } else {
+        taskStore.close();
+        noteStore.close();
+        await new Promise<void>((resolve) => {
+          server.close(() => resolve());
+        });
+      }
       fs.rmSync(taskDir, { recursive: true, force: true });
       fs.rmSync(noteDir, { recursive: true, force: true });
     },
