@@ -1,7 +1,7 @@
 # Fastify + TypeScript Migration Plan — NexKan Backend
 
 - **Created:** 2026-10-04
-- **Status:** Approved for planning. Decisions D1 to D5 were recorded on 2026-10-04 (see §9). Execution still needs an explicit "ENTER EXECUTE MODE".
+- **Status:** In execution. Phase 0 complete; Phase 1 next.
 - **Baseline commit:** `c1dd95a` (main)
 - **Baseline tests:** `cd backend && npx jest` gives 17 suites and 164 tests, all passing.
 
