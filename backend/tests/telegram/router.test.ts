@@ -100,8 +100,7 @@ describe('Telegram router and bot setup', () => {
       expect(res.status).toBe(200);
       expect(sendSpy).toHaveBeenCalledWith(
         '987654321',
-        expect.stringContaining('Webhook Delivery Error'),
-        expect.any(Object)
+        expect.stringContaining('Webhook Delivery Error')
       );
     });
 

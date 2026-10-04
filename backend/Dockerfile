@@ -36,7 +36,7 @@ COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 
 # Fresh prod-only install - creates @nexkan/shared symlink pointing to /app/shared
-RUN npm ci --workspace=@nexkan/shared --workspace=nexkan-backend --omit=dev
+RUN npm ci --workspace=@nexkan/shared --workspace=nexkan-backend --omit=dev && npm cache clean --force
 
 # Compiled output from builder
 COPY --from=builder /app/shared/dist ./shared/dist

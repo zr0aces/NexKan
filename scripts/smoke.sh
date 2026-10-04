@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Smoke test for NexKan deployment
-# Usage: ./scripts/smoke.sh [BASE_URL] [USER:PASS]
-# e.g.:  ./scripts/smoke.sh http://localhost:8092 admin:password
+# Usage: ./scripts/smoke.sh [BASE_URL] [USER:PASS] [TELEGRAM_WEBHOOK_SECRET]
+# e.g.:  ./scripts/smoke.sh http://localhost:8092 admin:password my-secret-token
 
 set -euo pipefail
 
@@ -49,6 +49,14 @@ else
   exit 1
 fi
 
+# Port 3000 from the host -> connection refused (backend port is not published to host in docker-compose)
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "http://localhost:3000" || true)
+if [ "$STATUS" = "000" ] || [ -z "$STATUS" ]; then
+  echo "  [PASS] Port 3000 from host is not published (connection refused)"
+else
+  echo "  [INFO] Port 3000 returned HTTP $STATUS (port published or testing local dev)"
+fi
+
 if [ -n "$CREDS" ]; then
   echo ""
   echo "2. Authenticated CRUD Round Trip"
@@ -83,6 +91,17 @@ if [ -n "$CREDS" ]; then
   # Verify deletion -> 404
   VERIFY_STATUS=$(curl -s -u "$CREDS" -o /dev/null -w "%{http_code}" "$BASE_URL/api/tasks/$TASK_ID")
   assert_status 404 "$VERIFY_STATUS" "Verify deleted task returns 404"
+fi
+
+WEBHOOK_SECRET="${3:-${TELEGRAM_WEBHOOK_SECRET:-}}"
+if [ -n "$WEBHOOK_SECRET" ]; then
+  echo ""
+  echo "3. Telegram Webhook /tasks Round Trip"
+  TG_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/webhooks/telegram" \
+    -H "Content-Type: application/json" \
+    -H "X-Telegram-Bot-Api-Secret-Token: $WEBHOOK_SECRET" \
+    -d '{"update_id":999999,"message":{"message_id":1,"date":1700000000,"chat":{"id":1,"type":"private"},"text":"/tasks"}}' || true)
+  assert_status 200 "$TG_STATUS" "POST /api/webhooks/telegram /tasks round trip"
 fi
 
 echo ""

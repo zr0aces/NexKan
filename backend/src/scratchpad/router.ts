@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { NoteStore, NotFoundError } from './store';
 import { NoteConverter } from './converter';
@@ -15,6 +15,16 @@ const ConvertSchema = z.object({
 export interface NoteRoutesOptions {
   noteStore: NoteStore;
   taskStore: TaskStore;
+}
+
+function handleNoteError(err: unknown, reply: FastifyReply) {
+  if (err instanceof NotFoundError) {
+    return reply.code(404).send({ error: err.message });
+  }
+  if (err instanceof Error && (err.message.includes('first line') || err.message.includes('due_date'))) {
+    return reply.code(400).send({ error: err.message });
+  }
+  return reply.code(500).send({ error: 'Internal server error' });
 }
 
 export const noteRoutes: FastifyPluginAsync<NoteRoutesOptions> = async (fastify, options) => {
@@ -52,10 +62,7 @@ export const noteRoutes: FastifyPluginAsync<NoteRoutesOptions> = async (fastify,
       const note = await noteStore.update(request.params.id, parsed.data.content);
       return reply.code(200).send(note);
     } catch (err) {
-      if (err instanceof NotFoundError) {
-        return reply.code(404).send({ error: err.message });
-      }
-      return reply.code(500).send({ error: 'Internal server error' });
+      return handleNoteError(err, reply);
     }
   });
 
@@ -64,10 +71,7 @@ export const noteRoutes: FastifyPluginAsync<NoteRoutesOptions> = async (fastify,
       await noteStore.deleteNote(request.params.id);
       return reply.code(204).send();
     } catch (err) {
-      if (err instanceof NotFoundError) {
-        return reply.code(404).send({ error: err.message });
-      }
-      return reply.code(500).send({ error: 'Internal server error' });
+      return handleNoteError(err, reply);
     }
   });
 
@@ -80,13 +84,7 @@ export const noteRoutes: FastifyPluginAsync<NoteRoutesOptions> = async (fastify,
       const task = await converter.convert(request.params.id, parsed.data);
       return reply.code(201).send(task);
     } catch (err) {
-      if (err instanceof NotFoundError) {
-        return reply.code(404).send({ error: err.message });
-      }
-      if (err instanceof Error && (err.message.includes('first line') || err.message.includes('due_date'))) {
-        return reply.code(400).send({ error: err.message });
-      }
-      return reply.code(500).send({ error: 'Internal server error' });
+      return handleNoteError(err, reply);
     }
   });
 };

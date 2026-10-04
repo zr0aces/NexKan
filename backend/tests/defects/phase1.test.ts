@@ -9,7 +9,7 @@ import { Task } from '@nexkan/shared';
 import { serializeTask } from '../../src/tasks/parser';
 import * as notifier from '../../src/telegram/notifier';
 import { getBot } from '../../src/telegram/bot';
-import { createApp, buildApp } from '../../src/app';
+import { buildApp } from '../../src/app';
 import { NoteStore } from '../../src/scratchpad/store';
 
 function sleep(ms: number): Promise<void> {
@@ -224,16 +224,15 @@ describe('Phase 1 Defect and Security Fixes (F1-F6, D1-D3)', () => {
     });
 
     it('starts successfully when neither TELEGRAM_BOT_TOKEN nor secrets are set', () => {
-      // Start in background and check output then kill
-      const child = spawnSync('node', ['-e', `
+      const child = spawnSync('npx', ['ts-node', '-e', `
         process.env.TELEGRAM_BOT_TOKEN = '';
         process.env.PORT = '49154';
-        const server = require('../../dist/server.js');
+        require('${serverScript}');
         setTimeout(() => process.exit(0), 400);
       `], {
         cwd: __dirname,
         encoding: 'utf-8',
-        timeout: 2000,
+        timeout: 5000,
       });
 
       expect(child.status).toBe(0);

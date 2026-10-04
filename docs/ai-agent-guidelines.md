@@ -11,7 +11,7 @@ NexKan is a self-hosted personal Kanban board. Tasks are markdown files with YAM
 npm workspaces with three packages:
 
 - `shared/` — `@nexkan/shared`: types, domain rules, date utils. Must be built before backend/frontend consume it.
-- `backend/` — Express 4 + TypeScript REST API + grammy Telegram bot
+- `backend/` — Fastify 5 + TypeScript REST API + grammy Telegram bot
 - `frontend/` — React 18 + Vite + TanStack Query + dnd-kit
 
 ## Commands
@@ -88,7 +88,7 @@ Frontend is served as static files via nginx from `frontend/dist/`. Run `npm run
 
 ### Backend
 
-- `src/app.ts` — Express app, routes mounted at `/api/tasks`, `/api/notes`, and `/api`
+- `src/app.ts` — Fastify app, plugins mounted at `/api/tasks`, `/api/notes`, and `/api`
 - `src/server.ts` — HTTP listener, starts Telegram webhook registration
 - `src/tasks/router.ts` — Task REST endpoints, Zod validation on all inputs
 - `src/scratchpad/router.ts` — Notes REST endpoints, Zod validation, and Task conversion logic
@@ -143,7 +143,7 @@ Copy `.env.example` to `.env`. Key vars:
 - `@nexkan/shared` must be built (`shared/dist/`) before backend or frontend TypeScript compilation succeeds.
 - Note filename format: `{8-char-nanoid}.md` (no slug, no section headings). Store controlled by `SCRATCHPAD_DIR` env var.
 - `shared/dist/` is gitignored — never `git add shared/dist/`. Only commit `shared/src/` changes after building.
-- Telegram webhook middleware and `registerWebhook()` are symmetric: if `TELEGRAM_WEBHOOK_SECRET` unset → register without secret + middleware passes all; if set → validate header. Mismatch causes 401. Fix: `docker compose exec backend node dist/scripts/telegram-webhook.js set`.
+- Telegram webhook middleware and startup check: if `TELEGRAM_BOT_TOKEN` is set, `TELEGRAM_WEBHOOK_SECRET` and `TELEGRAM_CHAT_ID` must be configured (fail-closed, D2). Webhook requests require a valid `X-Telegram-Bot-Api-Secret-Token` matching `TELEGRAM_WEBHOOK_SECRET`; missing or mismatched secret returns 401.
 
 ## Shared AI Workflow Conventions
 

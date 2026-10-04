@@ -31,17 +31,28 @@ describe('Tasks Contract Tests (Rows 1-7)', () => {
       expect(res.body).toHaveLength(1);
       expect(res.body[0].id).toBe('task0001');
 
-      // Verify JSON schema shape: undefined fields must not serialize as null
+      // Verify JSON schema shape: undefined fields must not serialize as null or be present
       const task = res.body[0];
-      expect(task).toMatchObject({
-        id: 'task0001',
-        title: 'Task A',
-        status: 'todo',
-        sort_order: 2,
-        tags: ['frontend'],
-      });
+      expect(task).toMatchInlineSnapshot(`
+{
+  "attachments": [],
+  "created_at": "2026-05-01T00:00:00Z",
+  "description": "Contract test description.",
+  "due_date": "2099-12-31",
+  "id": "task0001",
+  "sort_order": 2,
+  "status": "todo",
+  "tags": [
+    "frontend",
+  ],
+  "title": "Task A",
+  "updated_at": "2026-05-01T00:00:00Z",
+}
+`);
       expect(task.notes).toBeUndefined();
       expect(task.telegram_message_id).toBeUndefined();
+      expect('notes' in task).toBe(false);
+      expect('telegram_message_id' in task).toBe(false);
     });
 
     it('handles trailing slash /api/tasks/', async () => {

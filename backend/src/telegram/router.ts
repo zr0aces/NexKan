@@ -26,12 +26,12 @@ export interface TelegramRoutesOptions {
 export const telegramRoutes: FastifyPluginAsync<TelegramRoutesOptions> = async (fastify, options) => {
   const { taskStore } = options;
 
-  let cb: any;
+  let webhookHandler: any;
   if (process.env.TELEGRAM_BOT_TOKEN) {
     try {
-      cb = webhookCallback(getBot(), 'fastify');
+      webhookHandler = webhookCallback(getBot(), 'fastify');
     } catch {
-      cb = null;
+      webhookHandler = null;
     }
   }
 
@@ -43,10 +43,10 @@ export const telegramRoutes: FastifyPluginAsync<TelegramRoutesOptions> = async (
     },
     async (request, reply) => {
       try {
-        if (!cb) {
-          cb = webhookCallback(getBot(), 'fastify');
+        if (!webhookHandler) {
+          webhookHandler = webhookCallback(getBot(), 'fastify');
         }
-        await cb(request, reply);
+        await webhookHandler(request, reply);
       } catch (err) {
         console.error('Webhook error:', err);
         try {
@@ -56,8 +56,7 @@ export const telegramRoutes: FastifyPluginAsync<TelegramRoutesOptions> = async (
             await getBot()
               .api.sendMessage(
                 chatId,
-                `⚠️ **Webhook Delivery Error:**\n\`${errMsg}\``,
-                { parse_mode: 'Markdown' }
+                `Webhook Delivery Error:\n${errMsg}`
               )
               .catch(() => {});
           }

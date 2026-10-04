@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { TaskStore, NotFoundError } from './store';
 import { TaskService } from './service';
@@ -47,6 +47,16 @@ export interface TaskRoutesOptions {
   taskStore: TaskStore;
 }
 
+function handleTaskError(err: unknown, reply: FastifyReply) {
+  if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
+    return reply.code(404).send({ error: err.message });
+  }
+  if (err instanceof Error && err.message.includes('due_date')) {
+    return reply.code(400).send({ error: err.message });
+  }
+  return reply.code(500).send({ error: 'Internal server error' });
+}
+
 export const taskRoutes: FastifyPluginAsync<TaskRoutesOptions> = async (fastify, options) => {
   const { taskStore } = options;
   const taskService = new TaskService(taskStore);
@@ -92,10 +102,7 @@ export const taskRoutes: FastifyPluginAsync<TaskRoutesOptions> = async (fastify,
       const task = await taskService.createTask(parsed.data);
       return reply.code(201).send(task);
     } catch (err) {
-      if (err instanceof Error && err.message.includes('due_date')) {
-        return reply.code(400).send({ error: err.message });
-      }
-      return reply.code(500).send({ error: 'Internal server error' });
+      return handleTaskError(err, reply);
     }
   });
 
@@ -108,13 +115,7 @@ export const taskRoutes: FastifyPluginAsync<TaskRoutesOptions> = async (fastify,
       const task = await taskService.updateTask(request.params.id, parsed.data);
       return reply.code(200).send(task);
     } catch (err) {
-      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
-        return reply.code(404).send({ error: err.message });
-      }
-      if (err instanceof Error && err.message.includes('due_date')) {
-        return reply.code(400).send({ error: err.message });
-      }
-      return reply.code(500).send({ error: 'Internal server error' });
+      return handleTaskError(err, reply);
     }
   });
 
@@ -127,13 +128,7 @@ export const taskRoutes: FastifyPluginAsync<TaskRoutesOptions> = async (fastify,
       const task = await taskService.updateTaskStatus(request.params.id, parsed.data.status, parsed.data.due_date);
       return reply.code(200).send(task);
     } catch (err) {
-      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
-        return reply.code(404).send({ error: err.message });
-      }
-      if (err instanceof Error && err.message.includes('due_date')) {
-        return reply.code(400).send({ error: err.message });
-      }
-      return reply.code(500).send({ error: 'Internal server error' });
+      return handleTaskError(err, reply);
     }
   });
 
@@ -146,10 +141,7 @@ export const taskRoutes: FastifyPluginAsync<TaskRoutesOptions> = async (fastify,
       const task = await taskService.updateOrder(request.params.id, parsed.data.position);
       return reply.code(200).send(task);
     } catch (err) {
-      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
-        return reply.code(404).send({ error: err.message });
-      }
-      return reply.code(500).send({ error: 'Internal server error' });
+      return handleTaskError(err, reply);
     }
   });
 
@@ -158,10 +150,7 @@ export const taskRoutes: FastifyPluginAsync<TaskRoutesOptions> = async (fastify,
       await taskService.deleteTask(request.params.id);
       return reply.code(204).send();
     } catch (err) {
-      if (err instanceof NotFoundError || (err instanceof Error && err.message.includes('not found'))) {
-        return reply.code(404).send({ error: err.message });
-      }
-      return reply.code(500).send({ error: 'Internal server error' });
+      return handleTaskError(err, reply);
     }
   });
 };

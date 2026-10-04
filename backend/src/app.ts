@@ -75,12 +75,7 @@ export function buildApp(taskStore: TaskStore, noteStore: NoteStore): FastifyIns
   return app;
 }
 
-// Backward compatibility helper during migration phases
-export function createApp(taskStore: TaskStore, noteStore: NoteStore): any {
-  return buildApp(taskStore, noteStore);
-}
-
-// Production / Default exports for running the server and backward compatibility:
+// Production / Default exports for running the server:
 const getTaskDir = () => process.env.DATA_DIR || path.join(process.cwd(), 'data', 'tasks');
 const getScratchpadDir = () => process.env.SCRATCHPAD_DIR || path.join(process.cwd(), 'data', 'scratchpad');
 

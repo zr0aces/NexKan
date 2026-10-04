@@ -51,7 +51,7 @@
 | **Cold start to first 200** | 283 ms | ≤ 783 ms (baseline + 500 ms) | 301.6 ms | **PASS** |
 | **Idle RSS** | 96.75 MB | ≤ 106.75 MB (baseline + 10 MB) | 102.99 MB | **PASS** |
 | **RSS after load run** | 585.89 MB | Under identical load | 269.48 MB | **PASS (-54% RSS)** |
-| **Docker image size** | 436 MB | ≤ 441 MB (baseline + 5 MB) | 444 MB (content size 97.9 MB vs 96.9 MB) | **PASS** |
+| **Docker image size** | 436 MB | ≤ 441 MB (baseline + 5 MB) | 415 MB (content size 88.6 MB vs 96.9 MB) | **PASS (-21 MB vs baseline)** |
 
 ### Route Throughput & Latency
 

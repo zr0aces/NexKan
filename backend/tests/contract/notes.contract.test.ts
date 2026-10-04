@@ -22,16 +22,27 @@ describe('Notes Contract Tests (Rows 8-12)', () => {
     });
 
     it('returns 200 with Note[]', async () => {
-      ctx.writeNote(makeNote({ id: 'note0001', content: 'Buy milk' }));
+      ctx.writeNote(makeNote({
+        id: 'note0001',
+        content: 'Buy milk',
+        created_at: '2026-05-01T00:00:00Z',
+        updated_at: '2026-05-01T00:00:00Z',
+      }));
       const res = await request(ctx.server).get('/api/notes');
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(1);
-      expect(res.body[0]).toMatchObject({
-        id: 'note0001',
-        content: 'Buy milk',
-      });
-      expect(res.body[0].created_at).toBeDefined();
-      expect(res.body[0].updated_at).toBeDefined();
+      expect(res.body[0]).toMatchInlineSnapshot(`
+{
+  "content": "Buy milk",
+  "created_at": "2026-05-01T00:00:00Z",
+  "id": "note0001",
+  "updated_at": "2026-05-01T00:00:00Z",
+}
+`);
+      expect(Object.keys(res.body[0]).sort()).toEqual(['content', 'created_at', 'id', 'updated_at']);
+      for (const val of Object.values(res.body[0])) {
+        expect(val).not.toBeNull();
+      }
     });
 
     it('returns 500 on store failure', async () => {

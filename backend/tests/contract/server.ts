@@ -2,7 +2,7 @@ import http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { createApp } from '../../src/app';
+import { buildApp } from '../../src/app';
 import { TaskStore } from '../../src/tasks/store';
 import { NoteStore } from '../../src/scratchpad/store';
 import { FileSystemStorageProvider } from '../../src/storage/fileSystem';
@@ -75,15 +75,9 @@ export async function createContractTestContext(): Promise<ContractTestContext> 
 
   let fastifyApp: any;
 
-  if (isFastify) {
-    const { buildApp } = require('../../src/app');
-    fastifyApp = await buildApp(taskStore, noteStore);
-    await fastifyApp.ready();
-    server = fastifyApp.server;
-  } else {
-    const expressApp = createApp(taskStore, noteStore);
-    server = http.createServer(expressApp);
-  }
+  fastifyApp = await buildApp(taskStore, noteStore);
+  await fastifyApp.ready();
+  server = fastifyApp.server;
 
   const writeTask = (task: Task): void => {
     const slug = task.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40);
