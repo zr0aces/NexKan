@@ -65,7 +65,7 @@ export class TaskStore {
   }
 
   private setupFileWatcher(): void {
-    this.storageProvider.watch(async (eventType, filename) => {
+    this.storageProvider.watch(async (_eventType, filename) => {
       if (!filename.endsWith('.md')) return;
 
       if (filename.length < 12 || filename[8] !== '-') return;

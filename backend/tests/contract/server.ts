@@ -10,9 +10,6 @@ import { Task, Note } from '@nexkan/shared';
 import { serializeTask } from '../../src/tasks/parser';
 import { serializeNote } from '../../src/scratchpad/parser';
 
-export const SERVER_MODE = (process.env.TEST_SERVER_MODE || 'fastify') as 'express' | 'fastify';
-export const isFastify = SERVER_MODE === 'fastify';
-
 export interface ContractTestContext {
   server: http.Server;
   taskStore: TaskStore;
@@ -50,20 +47,6 @@ export function makeNote(overrides: Partial<Note> = {}): Note {
   };
 }
 
-export function createContractServer(appInstance?: any): http.Server {
-  if (appInstance) {
-    if (isFastify) {
-      return appInstance.server || appInstance;
-    }
-    return http.createServer(appInstance);
-  }
-  const app = require('../../src/app').default;
-  if (isFastify) {
-    return app.server || app;
-  }
-  return http.createServer(app);
-}
-
 export async function createContractTestContext(): Promise<ContractTestContext> {
   const taskDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexkan-contract-tasks-'));
   const noteDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexkan-contract-notes-'));
@@ -99,15 +82,7 @@ export async function createContractTestContext(): Promise<ContractTestContext> 
     writeTask,
     writeNote,
     close: async () => {
-      if (fastifyApp) {
-        await fastifyApp.close();
-      } else {
-        taskStore.close();
-        noteStore.close();
-        await new Promise<void>((resolve) => {
-          server.close(() => resolve());
-        });
-      }
+      await fastifyApp.close();
       fs.rmSync(taskDir, { recursive: true, force: true });
       fs.rmSync(noteDir, { recursive: true, force: true });
     },

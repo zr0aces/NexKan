@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { createContractTestContext, ContractTestContext, isFastify } from './server';
+import { createContractTestContext, ContractTestContext } from './server';
 
 describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
   let ctx: ContractTestContext;
@@ -30,13 +30,8 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
         .send('{ malformed json');
 
       expect(res.status).toBe(400);
-      if (isFastify) {
-        expect(res.headers['content-type']).toMatch(/application\/json/);
-        expect(res.body).toHaveProperty('error');
-      } else {
-        expect(res.headers['content-type']).toMatch(/text\/html/);
-        expect(res.text).toContain('SyntaxError');
-      }
+      expect(res.headers['content-type']).toMatch(/application\/json/);
+      expect(res.body).toHaveProperty('error');
     });
 
     it('handles oversize body (> 10 KiB) on standard routes', async () => {
@@ -51,12 +46,8 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
         .send(largePayload);
 
       expect(res.status).toBe(413);
-      if (isFastify) {
-        expect(res.headers['content-type']).toMatch(/application\/json/);
-        expect(res.body).toHaveProperty('error');
-      } else {
-        expect(res.headers['content-type']).toMatch(/text\/html/);
-      }
+      expect(res.headers['content-type']).toMatch(/application\/json/);
+      expect(res.body).toHaveProperty('error');
     });
   });
 
@@ -65,13 +56,8 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
     it('handles unknown route with appropriate format', async () => {
       const res = await request(ctx.server).get('/api/unknown-endpoint');
       expect(res.status).toBe(404);
-      if (isFastify) {
-        expect(res.headers['content-type']).toMatch(/application\/json/);
-        expect(res.body).toEqual({ error: 'Not found' });
-      } else {
-        expect(res.headers['content-type']).toMatch(/text\/html/);
-        expect(res.text).toContain('Cannot GET /api/unknown-endpoint');
-      }
+      expect(res.headers['content-type']).toMatch(/application\/json/);
+      expect(res.body).toEqual({ error: 'Not found' });
     });
   });
 
@@ -79,11 +65,7 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
   describe('C4: Path case sensitivity', () => {
     it('behaves according to framework case-sensitivity rule', async () => {
       const res = await request(ctx.server).get('/API/tasks');
-      if (isFastify) {
-        expect(res.status).toBe(404);
-      } else {
-        expect(res.status).toBe(200);
-      }
+      expect(res.status).toBe(404);
     });
   });
 
@@ -96,13 +78,8 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
         .set('Content-Type', 'application/json')
         .send('{ invalid json');
 
-      if (isFastify) {
-        // Fastify onRequest auth hook runs before body parsing
-        expect(res.status).toBe(401);
-      } else {
-        // Express global express.json middleware runs before route middleware
-        expect(res.status).toBe(400);
-      }
+      // Fastify onRequest auth hook runs before body parsing
+      expect(res.status).toBe(401);
     });
   });
 
@@ -114,11 +91,7 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
         .set('Content-Type', 'text/plain')
         .send('plain text body');
 
-      if (isFastify) {
-        expect(res.status).toBe(415);
-      } else {
-        expect(res.status).toBe(400);
-      }
+      expect(res.status).toBe(415);
     });
 
     it('handles application/x-www-form-urlencoded on cron endpoint (curl -d "" shape)', async () => {
@@ -128,11 +101,7 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
         .set('Content-Type', 'application/x-www-form-urlencoded')
         .send('');
 
-      if (isFastify) {
-        expect(res.status).toBe(415);
-      } else {
-        expect(res.status).toBe(200);
-      }
+      expect(res.status).toBe(415);
     });
   });
 
@@ -140,13 +109,8 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
   describe('C7: ETag and X-Powered-By headers', () => {
     it('checks presence or absence of framework identity headers', async () => {
       const res = await request(ctx.server).get('/api/tasks');
-      if (isFastify) {
-        expect(res.headers['x-powered-by']).toBeUndefined();
-        expect(res.headers['etag']).toBeUndefined();
-      } else {
-        expect(res.headers['x-powered-by']).toBe('Express');
-        expect(res.headers['etag']).toBeDefined();
-      }
+      expect(res.headers['x-powered-by']).toBeUndefined();
+      expect(res.headers['etag']).toBeUndefined();
     });
   });
 
@@ -157,11 +121,7 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
       const res = await request(ctx.server).get(`/api/tasks/${longId}`);
 
       expect(res.status).toBe(404);
-      if (isFastify) {
-        expect(res.body).toEqual({ error: 'Not found' });
-      } else {
-        expect(res.body).toEqual({ error: 'Task not found' });
-      }
+      expect(res.body).toEqual({ error: 'Not found' });
     });
   });
 
@@ -209,11 +169,7 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
           .set('Content-Type', 'text/plain')
           .send('arbitrary text');
 
-        if (isFastify) {
-          expect(res.status).toBe(415);
-        } else {
-          expect([400, 404]).toContain(res.status);
-        }
+        expect(res.status).toBe(415);
       }
     );
 
@@ -224,11 +180,7 @@ describe('Differences and Edge Cases Contract Tests (C2-C8, U1, U2)', () => {
           .set('Content-Type', 'application/x-www-form-urlencoded')
           .send('key=value');
 
-        if (isFastify) {
-          expect(res.status).toBe(415);
-        } else {
-          expect([400, 404]).toContain(res.status);
-        }
+        expect(res.status).toBe(415);
       }
     );
   });

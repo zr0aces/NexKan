@@ -85,7 +85,7 @@ export class FileSystemStorageProvider implements StorageProvider {
         fs.mkdirSync(this.rootDir, { recursive: true });
       }
 
-      this.watcher = fs.watch(this.rootDir, (eventType, filename) => {
+      this.watcher = fs.watch(this.rootDir, (_eventType, filename) => {
         if (!filename) return;
         const filePath = path.join(this.rootDir, filename);
         

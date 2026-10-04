@@ -104,7 +104,6 @@ Frontend is served as static files via nginx from `frontend/dist/`. Run `npm run
 - `src/pages/BoardPage.tsx` — 3-column Kanban with dnd-kit drag-and-drop
 - `src/pages/DashboardPage.tsx` — overdue, due today/tomorrow, stats
 - `src/components/task/TaskDialog.tsx` — create/edit modal
-- `src/types/task.ts` — frontend re-exports (keep in sync with `@nexkan/shared`)
 
 ### Shared Package (`@nexkan/shared`)
 

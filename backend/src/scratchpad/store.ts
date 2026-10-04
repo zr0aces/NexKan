@@ -47,7 +47,7 @@ export class NoteStore {
   }
 
   private setupFileWatcher(): void {
-    this.storageProvider.watch(async (eventType, filename) => {
+    this.storageProvider.watch(async (_eventType, filename) => {
       if (!filename.endsWith('.md')) return;
 
       const id = filename.replace(/\.md$/, '');

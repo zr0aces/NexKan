@@ -106,7 +106,7 @@ export default function DashboardPage() {
 
           {isScratchpadOpen && (
             <div className="lg:col-span-1 lg:sticky lg:top-20">
-              <ScratchpadPanel isOpen={isScratchpadOpen} onToggle={() => setIsScratchpadOpen(false)} />
+              <ScratchpadPanel onToggle={() => setIsScratchpadOpen(false)} />
             </div>
           )}
         </div>

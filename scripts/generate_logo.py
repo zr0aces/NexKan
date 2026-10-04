@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 # Define path configurations
-WORKSPACE_DIR = "/home/san/workspace/NexKan"
+WORKSPACE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 PUBLIC_DIR = os.path.join(WORKSPACE_DIR, "frontend/public")
 os.makedirs(PUBLIC_DIR, exist_ok=True)
 

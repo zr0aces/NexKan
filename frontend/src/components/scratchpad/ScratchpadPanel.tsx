@@ -10,11 +10,10 @@ import { useCreateNote, useUpdateNote, useDeleteNote, useConvertNote } from '@/h
 const EMPTY_NOTES: Note[] = [];
 
 interface ScratchpadPanelProps {
-  isOpen?: boolean;
   onToggle?: () => void;
 }
 
-export function ScratchpadPanel({ isOpen = true, onToggle }: ScratchpadPanelProps) {
+export function ScratchpadPanel({ onToggle }: ScratchpadPanelProps) {
   const { data: notes = EMPTY_NOTES, isLoading } = useNotes();
   const [convertTarget, setConvertTarget] = useState<Note | null>(null);
 
