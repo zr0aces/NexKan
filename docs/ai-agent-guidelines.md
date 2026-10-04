@@ -177,8 +177,8 @@ Default communication style for this repo's AI sessions: terse, technical substa
 
 ## Plans
 
-When creating a plan file under `docs/plans/`, the filename must include the creation date using the format `YYYY-MM-dd-plan-name.md`.
-Use the actual date when the plan is created.
-Use a clear, descriptive name for `plan-name`.
-
-Example: `2026-09-12-document-figures-alignment.md`
+- **Active plans**: When creating a plan file under `docs/plans/`, the filename must include the creation date using the format `YYYY-MM-dd-plan-name.md`.
+  - Use the actual date when the plan is created.
+  - Use a clear, descriptive name for `plan-name`.
+  - Example: `2026-09-12-document-figures-alignment.md`
+- **Completed plans**: When a plan is fully implemented, verified, and complete, move it into `docs/plans/completed/` (`docs/plans/completed/YYYY-MM-dd-plan-name.md`) to archive it and keep `docs/plans/` focused only on active work.
