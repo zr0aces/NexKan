@@ -1,6 +1,6 @@
 {
   "name": "nexkan",
-  "version": "2026.8.1",
+  "version": "2026.10.1",
   "private": true,
   "workspaces": [
     "shared",
