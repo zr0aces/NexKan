@@ -92,6 +92,9 @@ Verify:
 docker compose ps          # both containers should be Up
 docker compose logs backend --tail=20
 curl -u admin:<password> http://localhost:8092/api/tasks   # should return []
+
+# Run automated deployment smoke test:
+./scripts/smoke.sh http://localhost:8092 admin:<password> [TELEGRAM_WEBHOOK_SECRET]
 ```
 
 ---
@@ -190,6 +193,7 @@ docker compose up -d
 # Verify
 docker compose ps
 curl -u admin:<password> http://localhost:8092/api/tasks
+./scripts/smoke.sh http://localhost:8092 admin:<password>
 ```
 
 User credentials in `data/.htpasswd` persist across updates — no re-creation needed.

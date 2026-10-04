@@ -60,13 +60,13 @@ NexKan includes an integrated Telegram bot (built with `grammy`) that serves as 
 
 NexKan is organized as an **npm monorepo workspace** consisting of three packages:
 - `shared/` (`@nexkan/shared`) — Shared type definitions, domain logic (such as due-date invariants), and local date helpers.
-- `backend/` (`nexkan-backend`) — Node.js 24 / Express 4 API server and Grammy Telegram bot.
+- `backend/` (`nexkan-backend`) — Node.js 24 / Fastify 5 API server and Grammy Telegram bot.
 - `frontend/` (`nexkan-frontend`) — React 18 / Vite 7 single-page application.
 
 | Component | Technologies Used | Description |
 |-----------|-------------------|-------------|
 | **Frontend** | React 18, Vite 7, TanStack Query v5, dnd-kit | Single Page App with optimistic UI mutations, theme switcher, and drag-and-drop. |
-| **Backend** | Express 4, TypeScript, Zod | REST API server with validation and Telegram webhook endpoints. |
+| **Backend** | Fastify 5, TypeScript, Zod | REST API server with validation and Telegram webhook endpoints. |
 | **Storage** | Markdown, YAML frontmatter, `gray-matter` | Tasks are parsed to/from `.md` files; scratchpad notes are stored in `data/scratchpad/`. |
 | **Telegram** | grammy, chrono-node | Webhook-driven bot with interactive inline button callbacks and natural language date parsing. |
 | **Styling** | Tailwind CSS v3, Radix UI | Dark/light mode theme system with responsive custom Tailwind keyframe animations. |
@@ -87,5 +87,6 @@ NexKan features a unified, minimalist flat-UI design layout centered around a te
 
 - [Deployment guide](docs/deployment.md) — Setup, HTTPS, cron, updates, troubleshooting
 - [API reference](docs/api.md) — All REST endpoints, query params, request/response shapes
+- [Performance baseline & benchmarks](docs/perf-baseline.md) — Fastify vs Express benchmarks on memory, throughput, and latency
 - [Versioning & releases guide](docs/versioning.md) — CalVer scheme, syncing, release script
 - [AI agent guidelines](docs/ai-agent-guidelines.md) — Shared context for supported AI coding tools (Claude Code, Google Antigravity, Codex)

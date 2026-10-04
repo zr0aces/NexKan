@@ -1,7 +1,7 @@
 # Fastify + TypeScript Migration Plan — NexKan Backend
 
 - **Created:** 2026-10-04
-- **Status:** Completed. All phases (0–6) implemented, verified with contract & unit test suites (292 tests passing across workspaces), benchmarks recorded, merged to main, and pushed.
+- **Status:** Completed. All phases (0–6) implemented, verified with contract, unit, and integration test suites (294 tests passing across workspaces), benchmarks recorded, merged to main, code-reviewed and hardened.
 - **Baseline commit:** `c1dd95a` (main)
 - **Baseline tests:** `cd backend && npx jest` gives 17 suites and 164 tests, all passing.
 
