@@ -30,9 +30,15 @@ npm install          # install all workspaces
 ./scripts/telegram-webhook.sh <cmd>       # Manage Telegram webhook (info, set, delete, set-commands)
 # Or inside Docker (production):
 docker compose exec backend node dist/scripts/telegram-webhook.js <info|set|delete|set-commands>
-node scripts/sync-version.mjs [version]   # Sync version to all workspaces
-node scripts/release.mjs [version]        # Auto-sync, build, and output git release commands
+node scripts/sync-version.mjs             # Metadata-only sync from root VERSION
+node scripts/sync-version.mjs --check     # Read-only full inventory check
+node scripts/release.mjs                  # Prepare only: bump, sync, check
+node scripts/release.mjs --build --tag    # New release + shared compile + Docker + exact commit/tag
+node scripts/release.mjs --help           # Runnable examples; --version YYYY.M.N selects newer version
+node --test scripts/version-control.test.mjs scripts/version-targets.test.mjs
 ```
+
+Root VERSION is authoritative; missing/malformed source fails rather than falling back to package metadata. Sync no longer compiles shared or installs dependencies. After a standalone sync, rebuild `@nexkan/shared` before consuming `shared/dist/`. Explicit release `--build` compiles shared first, then builds Docker; failure retains prepared metadata and blocks tagging. `--tag` independently opts into exact-path commit/annotated local tag; nothing pushes. To tag an already-prepared version, use printed Git commands instead of rerunning release.
 
 ### Shared
 
